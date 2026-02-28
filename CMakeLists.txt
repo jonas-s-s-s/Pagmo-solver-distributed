@@ -36,8 +36,8 @@ endif()
 # So the EXE find this dll
 set_target_properties(pagmo
         PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src/run_example/"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src/run_example/"
 )
 
 #########################################################################################
@@ -49,8 +49,8 @@ add_subdirectory(./external/libzmq)
 # So the EXE find this dll
 set_target_properties(libzmq
         PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src"
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src/run_example/"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src/run_example/"
 )
 #########################################################################################
 

@@ -11,17 +11,7 @@ namespace islandTest
      * Utility function which runs an algorithm on some problem for GEN_COUNT generations with POPULATION_SIZE
      */
     void run_algorithm_on_problem(const pagmo::problem& problem, const pagmo::algorithm& algorithm);
-
-    /*
-     * Functions to run different problem sets on our algorithm
-     */
-    void run_cec2014(const pagmo::algorithm& algorithm);
-    void run_cec2013(const pagmo::algorithm& algorithm);
-    void run_cec2009(const pagmo::algorithm& algorithm);
-    void run_cec2006(const pagmo::algorithm& algorithm);
-    void run_schwefel(const pagmo::algorithm& algorithm);
-    void run_dtlz(const pagmo::algorithm& algorithm);
-    void run_wfg(const pagmo::algorithm& algorithm);
+    
     void run_zdt(const pagmo::algorithm& algorithm);
 
     /*

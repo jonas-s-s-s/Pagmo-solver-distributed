@@ -1,0 +1,5 @@
+add_library(distributed_archipelago distributed_island.cpp)
+
+target_include_directories(distributed_archipelago PUBLIC include)
+target_link_libraries(distributed_archipelago cppzmq libzmq)
+target_link_libraries(distributed_archipelago pagmo)
