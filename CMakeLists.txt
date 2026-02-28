@@ -40,6 +40,26 @@ set_target_properties(pagmo
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src"
 )
 
+#########################################################################################
+# libzmq
+# IMPORTANT: CMake generation step ends with ninja error if this is not set to OFF
+set(ENABLE_PRECOMPILED  OFF CACHE BOOL "" FORCE)
+add_subdirectory(./external/libzmq)
+
+# So the EXE find this dll
+set_target_properties(libzmq
+        PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src"
+)
+#########################################################################################
+
+#########################################################################################
+# cppzmq
+set(CPPZMQ_BUILD_TESTS OFF)
+add_subdirectory(./external/cppzmq)
+#########################################################################################
+
 add_subdirectory(src)
 
 # Pagmo deps:
