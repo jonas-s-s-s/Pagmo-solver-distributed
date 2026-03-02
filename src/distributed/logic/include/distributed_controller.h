@@ -1,4 +1,5 @@
 #pragma once
+#include <thread>
 #include <unordered_set>
 
 #include "msgpack23.h"
@@ -12,6 +13,8 @@ class distributed_controller
 
     std::unordered_set<std::string> _freeWorkersPool{};
     std::unordered_set<std::string> _busyWorkersPool{};
+
+    std::thread _serverThread;
 
     /**
      * Receives a message from one of the workers
@@ -38,7 +41,9 @@ class distributed_controller
 public:
     explicit distributed_controller(const std::string& controllerAddress);
 
-    void server_loop();
+    void run_server();
+
+    ~distributed_controller();
 };
 
 template <typename Packable>
