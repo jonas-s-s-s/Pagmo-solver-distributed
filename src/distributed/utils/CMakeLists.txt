@@ -1,0 +1,2 @@
+add_library(distributed_utils INTERFACE)
+target_include_directories(distributed_utils INTERFACE include)

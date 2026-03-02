@@ -3,22 +3,11 @@
 #include <iostream>
 #include <random>
 
+#include "UUID.h"
+
 std::string distributed_worker::_generate_worker_id()
 {
-    static std::random_device dev;
-    static std::mt19937 rng(dev());
-    std::uniform_int_distribution dist(0, 15);
-    const char* v = "0123456789abcdef";
-    const bool dash[] = {0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0};
-    std::string res;
-    for (int i = 0; i < 16; i++)
-    {
-        if (dash[i]) res += "-";
-        res += v[dist(rng)];
-        res += v[dist(rng)];
-    }
-
-    return "worker_" + res;
+    return "worker_" + uuid::v4::UUID::New().String();
 }
 
 std::tuple<MsgType, std::vector<std::byte>> distributed_worker::_receive()
