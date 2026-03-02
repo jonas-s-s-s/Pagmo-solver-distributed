@@ -2,6 +2,24 @@
 
 #include <random>
 
+std::string distributed_worker::_generate_worker_id()
+{
+    static std::random_device dev;
+    static std::mt19937 rng(dev());
+    std::uniform_int_distribution<int> dist(0, 15);
+    const char* v = "0123456789abcdef";
+    const bool dash[] = {0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0};
+    std::string res;
+    for (int i = 0; i < 16; i++)
+    {
+        if (dash[i]) res += "-";
+        res += v[dist(rng)];
+        res += v[dist(rng)];
+    }
+
+    return "worker_" + res;
+}
+
 std::tuple<MsgType, std::vector<std::byte>> distributed_worker::_receive()
 {
     zmq::message_t typeMsg;
@@ -39,10 +57,11 @@ void distributed_worker::_send(MsgType type)
 }
 
 
-distributed_worker::distributed_worker(const std::string& controllerAddress) : _workerSocket(_ctx, zmq::socket_type::dealer)
+distributed_worker::distributed_worker(const std::string& controllerAddress) : _workerSocket(
+    _ctx, zmq::socket_type::dealer)
 {
-    // TODO: Better worker ID generator
-    _workerSocket.set(zmq::sockopt::routing_id, std::to_string(std::mt19937{std::random_device{}()}() % 100));
+    _workerId = _generate_worker_id();
+    _workerSocket.set(zmq::sockopt::routing_id, _workerId);
     _workerSocket.connect(controllerAddress);
 
     // Send out initial message to controller
@@ -51,5 +70,4 @@ distributed_worker::distributed_worker(const std::string& controllerAddress) : _
 
 void distributed_worker::client_loop()
 {
-
 }

@@ -8,6 +8,8 @@ class distributed_worker
     zmq::context_t _ctx;
     zmq::socket_t _workerSocket;
 
+    std::string _workerId;
+
     std::tuple<MsgType, std::vector<std::byte>> _receive();
 
     template <typename Packable>
@@ -16,6 +18,8 @@ class distributed_worker
     void _send(MsgType type, const std::vector<std::byte>& payload);
 
     void _send(MsgType type);
+
+    static std::string _generate_worker_id();
 
 public:
     explicit distributed_worker(const std::string& controllerAddress);
