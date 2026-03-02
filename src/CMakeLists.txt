@@ -1,2 +1,2 @@
 add_subdirectory(run_example)
-add_subdirectory(distributed_archipelago)
+add_subdirectory(distributed)

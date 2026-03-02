@@ -1,0 +1,6 @@
+add_subdirectory(messages)
+add_subdirectory(logic)
+
+add_library(distributed INTERFACE)
+
+target_link_libraries(distributed INTERFACE distributed_logic distributed_messages)

@@ -2,4 +2,4 @@ add_executable(main main.cpp)
 
 add_subdirectory(algorithms)
 
-target_link_libraries(main island_test)
+target_link_libraries(main island_test distributed)

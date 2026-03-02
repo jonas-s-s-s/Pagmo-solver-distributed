@@ -1,5 +1,6 @@
 #include "islandTest.h"
 
+#include "distributed_controller.h"
 #include "distributed_island.h"
 #include "pagmo/algorithms/pso.hpp"
 #include "pagmo/algorithm.hpp"
