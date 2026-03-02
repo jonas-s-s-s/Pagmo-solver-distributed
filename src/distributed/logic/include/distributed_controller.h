@@ -1,4 +1,6 @@
 #pragma once
+#include <unordered_set>
+
 #include "msgpack23.h"
 #include "MsgType.h"
 #include "zmq.hpp"
@@ -7,6 +9,9 @@ class distributed_controller
 {
     zmq::context_t _ctx;
     zmq::socket_t _controllerSocket;
+
+    std::unordered_set<std::string> _freeWorkersPool{};
+    std::unordered_set<std::string> _busyWorkersPool{};
 
     /**
      * Receives a message from one of the workers
