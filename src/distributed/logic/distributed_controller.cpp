@@ -52,7 +52,7 @@ distributed_controller::distributed_controller(const std::string& controllerAddr
                 });
 
     _workersSocket.bind(controllerAddress);
-    _islandsSocket.bind("inproc://distributed_controller_islands_socket");
+    _islandsSocket.bind("ipc://distributed_controller_islands_socket");
 }
 
 void distributed_controller::run_server()

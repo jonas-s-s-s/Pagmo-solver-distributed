@@ -1,4 +1,5 @@
 #include "distributed_controller.h"
+#include "distributed_island.h"
 #include "distributed_worker.h"
 #include "islandTest.h"
 
@@ -12,7 +13,11 @@ int main(int argc, char* argv[])
         distributed_controller controller{address};
         controller.run_server();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+
+        auto isl = pagmo::distributed_island{};
+        auto pisl = pagmo::island{};
+        isl.run_evolve(pisl);
     }
     else
     {

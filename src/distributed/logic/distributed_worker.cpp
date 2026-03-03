@@ -5,12 +5,6 @@
 
 #include "UUID.h"
 
-std::string distributed_worker::_generate_worker_id()
-{
-    return "worker_" + uuid::v4::UUID::New().String();
-}
-
-
 distributed_worker::distributed_worker(const std::string& controllerAddress) :
     _workerSocket(_ctx),
     _threadSocket(_ctx)
@@ -33,7 +27,7 @@ distributed_worker::distributed_worker(const std::string& controllerAddress) :
     _threadSocket.bind("inproc://thread_socket");
 
     // Configure the worker socket so it can communicate with the controller
-    _workerId = _generate_worker_id();
+    _workerId = "worker_" + uuid::v4::UUID::New().String();
     _workerSocket.set_routing_id(_workerId);
     _workerSocket.connect(controllerAddress);
 

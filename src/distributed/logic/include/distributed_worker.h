@@ -27,8 +27,6 @@ class distributed_worker
     void _handleWorkerSocketMsg();
     void _handleThreadSocketMsg();
 
-    static std::string _generate_worker_id();
-
 public:
     explicit distributed_worker(const std::string& controllerAddress);
 
