@@ -42,9 +42,15 @@ namespace pagmo
 
         auto impl = [&isl, this]()
         {
+            _dealerSocket.set_routing_id(_islandId);
             std::cout << "Running distributed island" << std::endl;
             _dealerSocket.connect("ipc://distributed_controller_islands_socket");
+            std::cout << "Distributed island connected" << std::endl;
             _dealerSocket.send(MsgType::ALLOCATE_WORK);
+            std::cout << "Distributed island allocate work sent" << std::endl;
+
+            auto [type, binary] = _dealerSocket.receive();
+            std::cout << "island received [" << static_cast<int>(type) << "] from controller" << std::endl;
 
         };
 

@@ -15,11 +15,16 @@ class distributed_controller
     distributed::router_socket _islandsSocket;
     std::thread _serverThread;
 
+    std::unordered_set<std::string> _islandsWaitingForAlloc{};
     std::unordered_set<std::string> _freeWorkersPool{};
-    std::unordered_set<std::string> _busyWorkersPool{};
+    // Pairs of {workerID, islandID} indicate which worker is currently being used by which island
+    std::unordered_map<std::string, std::string> _workAllocationMap{};
 
     void _handleWorkersSocketMsg();
     void _handleIslandsSocketMsg();
+
+    void _allocate_worker_to_island(const std::string& islandId);
+
 
 public:
     explicit distributed_controller(const std::string& controllerAddress);

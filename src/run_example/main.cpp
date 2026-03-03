@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
         distributed_controller controller{address};
         controller.run_server();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(3000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
         auto isl = pagmo::distributed_island{};
         auto pisl = pagmo::island{};
