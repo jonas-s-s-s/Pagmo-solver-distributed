@@ -9,6 +9,11 @@ void distributed::socket::bind(const std::string& address)
     _socket.bind(address);
 }
 
+void distributed::socket::connect(const std::string& address)
+{
+    _socket.connect(address);
+}
+
 zmq::socket_t& distributed::socket::get_socket()
 {
     return _socket;

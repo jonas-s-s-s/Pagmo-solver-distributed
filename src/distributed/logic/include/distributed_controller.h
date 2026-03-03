@@ -20,7 +20,6 @@ class distributed_controller
 
     zmq::active_poller_t _poller;
 
-
 public:
     explicit distributed_controller(const std::string& controllerAddress);
 

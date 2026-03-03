@@ -7,6 +7,8 @@ namespace distributed
     {
 
     public:
+        using server_socket::send;
+
         explicit router_socket(zmq::context_t& ctx);
 
         void send(const std::string& receiverId, MsgType type, const std::vector<std::byte>& serialized) override;

@@ -1,4 +1,4 @@
-add_library(distributed_sockets socket.cpp server_socket.cpp router_socket.cpp)
+add_library(distributed_sockets socket.cpp server_socket.cpp router_socket.cpp client_socket.cpp dealer_socket.cpp)
 
 target_include_directories(distributed_sockets PUBLIC include)
 

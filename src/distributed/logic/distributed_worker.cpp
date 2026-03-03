@@ -10,49 +10,13 @@ std::string distributed_worker::_generate_worker_id()
     return "worker_" + uuid::v4::UUID::New().String();
 }
 
-std::tuple<MsgType, std::vector<std::byte>> distributed_worker::_receive()
-{
-    zmq::message_t typeMsg;
-    zmq::message_t payloadMsg;
-
-    // No-discard
-    const auto r1 = _workerSocket.recv(typeMsg);
-    const auto r2 = _workerSocket.recv(payloadMsg);
-
-    // Identification of the message
-    int type;
-    std::memcpy(&type, typeMsg.data(), sizeof(type));
-
-    // The serialized message object
-    std::vector payloadBinary(
-        static_cast<std::byte*>(payloadMsg.data()),
-        static_cast<std::byte*>(payloadMsg.data()) + payloadMsg.size()
-    );
-
-    return {static_cast<MsgType>(type), payloadBinary};
-}
-
-void distributed_worker::_send(MsgType type, const std::vector<std::byte>& payload)
-{
-    const int typeInt = static_cast<int>(type);
-    _workerSocket.send(zmq::buffer(&typeInt, sizeof(typeInt)), zmq::send_flags::sndmore);
-    _workerSocket.send(zmq::buffer(payload), zmq::send_flags::none);
-}
-
-void distributed_worker::_send(MsgType type)
-{
-    const int typeInt = static_cast<int>(type);
-    _workerSocket.send(zmq::buffer(&typeInt, sizeof(typeInt)), zmq::send_flags::sndmore);
-    _workerSocket.send(zmq::buffer(""), zmq::send_flags::none);
-}
-
 
 distributed_worker::distributed_worker(const std::string& controllerAddress) :
-    _workerSocket(_ctx, zmq::socket_type::dealer),
+    _workerSocket(_ctx),
     _threadSocket(_ctx, zmq::socket_type::pair)
 {
     // Poller callback - worker socket has message
-    _poller.add(_workerSocket, zmq::event_flags::pollin,
+    _poller.add(_workerSocket.get_socket(), zmq::event_flags::pollin,
                 [this](zmq::event_flags e)
                 {
                     _handleWorkerSocketMsg();
@@ -70,11 +34,11 @@ distributed_worker::distributed_worker(const std::string& controllerAddress) :
 
     // Configure the worker socket so it can communicate with the controller
     _workerId = _generate_worker_id();
-    _workerSocket.set(zmq::sockopt::routing_id, _workerId);
+    _workerSocket.set_routing_id(_workerId);
     _workerSocket.connect(controllerAddress);
 
     // Send out initial message to controller
-    _send(MsgType::WORKER_JOIN);
+    _workerSocket.send(MsgType::WORKER_JOIN);
 }
 
 
@@ -100,7 +64,7 @@ void distributed_worker::_start_worker_thread()
 
 void distributed_worker::_handleWorkerSocketMsg()
 {
-    auto [type, binary] = _receive();
+    auto [type, binary] = _workerSocket.receive();
 
     std::cout << "[" << static_cast<int>(type) << "] from controller" << std::endl;
 

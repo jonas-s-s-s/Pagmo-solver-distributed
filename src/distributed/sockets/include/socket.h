@@ -16,6 +16,8 @@ namespace distributed
 
         void bind(const std::string& address);
 
+        void connect(const std::string& address);
+
         [[nodiscard]] zmq::socket_t& get_socket();
     };
 }
