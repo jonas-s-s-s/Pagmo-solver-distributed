@@ -13,7 +13,7 @@ std::string distributed_worker::_generate_worker_id()
 
 distributed_worker::distributed_worker(const std::string& controllerAddress) :
     _workerSocket(_ctx),
-    _threadSocket(_ctx, zmq::socket_type::pair)
+    _threadSocket(_ctx)
 {
     // Poller callback - worker socket has message
     _poller.add(_workerSocket.get_socket(), zmq::event_flags::pollin,
@@ -23,7 +23,7 @@ distributed_worker::distributed_worker(const std::string& controllerAddress) :
                 });
 
     // Poller callback - thread socket has message
-    _poller.add(_threadSocket, zmq::event_flags::pollin,
+    _poller.add(_threadSocket.get_socket(), zmq::event_flags::pollin,
                 [this](zmq::event_flags e)
                 {
                     _handleThreadSocketMsg();
@@ -90,7 +90,8 @@ void distributed_worker::_handleWorkerSocketMsg()
 void distributed_worker::_handleThreadSocketMsg()
 {
     zmq::message_t results;
-    auto r = _threadSocket.recv(results, zmq::recv_flags::none);
+    auto [type, binary] = _threadSocket.receive();
+
     _workerThread.join();
 
     // // Send back WorkerResults

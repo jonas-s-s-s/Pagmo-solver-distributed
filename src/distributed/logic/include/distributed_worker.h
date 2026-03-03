@@ -5,6 +5,7 @@
 #include "zmq.hpp"
 #include "msgpack23.h"
 #include "MsgType.h"
+#include "pair_socket.h"
 #include "zmq_addon.hpp"
 
 class distributed_worker
@@ -19,7 +20,7 @@ class distributed_worker
 
     // Work-related code should run on this thread, so we don't block the client message loop
     std::thread _workerThread;
-    zmq::socket_t _threadSocket;
+    distributed::pair_socket _threadSocket;
 
     void _start_worker_thread();
 
