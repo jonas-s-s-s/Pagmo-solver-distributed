@@ -2,5 +2,5 @@ add_library(distributed_sockets socket.cpp server_socket.cpp router_socket.cpp c
 
 target_include_directories(distributed_sockets PUBLIC include)
 
-target_link_libraries(distributed_sockets distributed_messages)
+target_link_libraries(distributed_sockets distributed_messages distributed_utils)
 target_link_libraries(distributed_sockets cppzmq libzmq)

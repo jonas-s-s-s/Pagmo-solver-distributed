@@ -3,7 +3,6 @@
 
 #include "dealer_socket.h"
 #include "zmq.hpp"
-#include "msgpack23.h"
 #include "MsgType.h"
 #include "pair_socket.h"
 #include "zmq_addon.hpp"

@@ -1,8 +1,12 @@
 #pragma once
-#include <vector>
 
 #include "pagmo/algorithm.hpp"
 #include "pagmo/population.hpp"
+#include <pagmo/s11n.hpp>
+#include <pagmo/detail/s11n_wrappers.hpp>
+#include <utility>
+
+#include "pagmo/algorithms/nsga2.hpp"
 
 enum class MsgType
 {
@@ -12,33 +16,43 @@ enum class MsgType
     WORK_RESULTS,
 };
 
-struct AllocateWork
+class AllocateWork
 {
+public:
     pagmo::algorithm algo;
     pagmo::population pop;
 
-    template<typename T>
-    void pack(T &packer) const {
-        packer(algo, pop);
+    AllocateWork(pagmo::algorithm algo, pagmo::population pop) : algo(std::move(algo)), pop(std::move(pop))
+    {
     }
 
-    template<typename T>
-    void unpack(T &unpacker) {
-        unpacker(algo, pop);
-    }
-};
+    AllocateWork() = default;
 
-struct WorkResults
-{
-    std::vector<double> population;
+private:
+    //####################################
+    //# BOOST SERIALIZE
+    //####################################
 
-    template<typename T>
-    void pack(T &packer) const {
-        packer(population);
+    friend class boost::serialization::access;
+    template <typename Archive>
+    void save(Archive& ar, unsigned) const
+    {
+        pagmo::detail::to_archive(ar, algo, pop);
     }
 
-    template<typename T>
-    void unpack(T &unpacker) {
-        unpacker(population);
+    template <typename Archive>
+    void load(Archive& ar, unsigned)
+    {
+        try
+        {
+            pagmo::detail::from_archive(ar, algo, pop);
+        }
+        catch (...)
+        {
+            *this = AllocateWork{};
+            throw;
+        }
     }
+
+    BOOST_SERIALIZATION_SPLIT_MEMBER()
 };

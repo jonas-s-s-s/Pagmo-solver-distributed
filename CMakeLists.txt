@@ -24,6 +24,11 @@ message(AUTHOR_WARNING "Make sure that you've installed Boost and Intel TBB befo
 message(AUTHOR_WARNING "Both Boost and Intel TBB must be in your env PATH variable (e.g. C:\\Program Files (x86)\\Intel\\oneAPI\\tbb\\2022.2\\bin) or else pagmo.dll won't load.'")
 
 set(PAGMO_WITH_EIGEN3 ON)
+# We need pagmo linked as a static library, or else there are problems with boost serialization:
+# https://stackoverflow.com/questions/51347113/dll-export-class-template-member-func-unresolved-external-symbol-any-chan
+# https://boost-users.boost.narkive.com/1vikEf1V/serialization-unregistered-class-exception-during-serialization-from-dll
+set(PAGMO_BUILD_STATIC_LIBRARY ON)
+
 add_subdirectory(./external/pagmo)
 
 # This needs to be added or Pagmo won't compile with newest MSVC (14.44)

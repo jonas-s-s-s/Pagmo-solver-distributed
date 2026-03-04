@@ -9,12 +9,10 @@ namespace distributed
     public:
         client_socket(zmq::context_t& ctx, const zmq::socket_type type);;
 
-        template <typename Packable>
-        void send(MsgType type, const Packable& payload)
+        template <typename Serializable>
+        void send(MsgType type, const Serializable& payload)
         {
-            std::vector<std::byte> serialized;
-            msgpack23::pack(std::back_inserter(serialized), payload);
-            send(type, serialized);
+            send(type, serialize_object<Serializable>(payload));
         }
 
         virtual void send(MsgType type);
