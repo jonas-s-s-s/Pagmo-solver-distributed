@@ -15,9 +15,7 @@ int main(int argc, char* argv[])
 
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
-        auto isl = pagmo::distributed_island{};
-        auto pisl = pagmo::island{};
-        isl.run_evolve(pisl);
+        islandTest::run_nsga2(islandTest::run_zdt);
     }
     else
     {
