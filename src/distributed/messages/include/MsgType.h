@@ -1,6 +1,9 @@
 #pragma once
 #include <vector>
 
+#include "pagmo/algorithm.hpp"
+#include "pagmo/population.hpp"
+
 enum class MsgType
 {
     WORKER_JOIN,
@@ -11,16 +14,17 @@ enum class MsgType
 
 struct AllocateWork
 {
-    std::vector<double> population;
+    pagmo::algorithm algo;
+    pagmo::population pop;
 
     template<typename T>
     void pack(T &packer) const {
-        packer(population);
+        packer(algo, pop);
     }
 
     template<typename T>
     void unpack(T &unpacker) {
-        unpacker(population);
+        unpacker(algo, pop);
     }
 };
 

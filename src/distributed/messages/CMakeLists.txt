@@ -1,2 +1,3 @@
 add_library(distributed_messages INTERFACE)
 target_include_directories(distributed_messages INTERFACE include)
+target_link_libraries(distributed_messages INTERFACE pagmo)

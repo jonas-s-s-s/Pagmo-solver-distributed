@@ -20,10 +20,6 @@ namespace pagmo
     std::tuple<algorithm, population> distributed_island::_load_pagmo_pop_and_algo(const island& isl)
     {
         // Load algorithm and population from the island object in exactly the same way as pagmo::thread_island
-
-        algorithm algo;
-        population pop;
-
         const auto gte = detail::gte_getter();
         (void)gte;
 
@@ -46,7 +42,7 @@ namespace pagmo
                         + tmp_pop.get_problem().get_name() + "' does not");
         }
 
-        return {algo, pop};
+        return {tmp_algo, tmp_pop};
     }
 
     distributed_island::distributed_island() : _ctx{new zmq::context_t{}}, _dealerSocket{new distributed::dealer_socket(*_ctx)}
@@ -83,7 +79,7 @@ namespace pagmo
             std::cout << "Running distributed island" << std::endl;
             _dealerSocket->connect("ipc://distributed_controller_islands_socket");
             std::cout << "Distributed island connected" << std::endl;
-            _dealerSocket->send(MsgType::ALLOCATE_WORK);
+            _dealerSocket->send(MsgType::ALLOCATE_WORK, AllocateWork{algo, pop});
             std::cout << "Distributed island allocate work sent" << std::endl;
 
             // 3) Wait until controller returns results from worker

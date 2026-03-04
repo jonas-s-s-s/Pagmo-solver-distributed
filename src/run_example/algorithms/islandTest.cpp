@@ -26,7 +26,6 @@ void islandTest::run_algorithm_on_problem(const pagmo::problem& problem, const p
     // Wait for evolution to finish
     archi.wait_check();
 
-
     for (int i = 0; i < archi.size(); ++i)
     {
         const auto& isl = archi[i];
