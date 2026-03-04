@@ -10,20 +10,26 @@ void distributed_controller::_handleWorkersSocketMsg()
     switch (type)
     {
     case MsgType::WORKER_JOIN:
+        /*
+         * New Worker Joined
+         *
+         * If there are islands waiting for allocating, allocate worker to one of them,
+         * otherwise save worker ID into the free workers pool
+        */
+
         std::cout << "Worker " << workerId << " joined" << std::endl;
         _freeWorkersPool.emplace(workerId);
 
         if (!_islandsWaitingForAlloc.empty())
         {
-            const auto islandId = *_islandsWaitingForAlloc.begin();
-            _islandsWaitingForAlloc.erase(islandId);
-            _allocate_worker_to_island(islandId);
+            const auto islandRecord = _islandsWaitingForAlloc.begin();
+            _islandsWaitingForAlloc.erase(islandRecord);
+            _allocate_worker_to_island(islandRecord->first, islandRecord->second);
         }
 
         std::cout << "Free workers: " << _freeWorkersPool.size() << std::endl;
         break;
     case MsgType::WORKER_LEAVE:
-        //const auto binRequest = msgpack23::unpack<BinariesRequest>(binary);
 
         _freeWorkersPool.erase(workerId);
         // TODO: Handle busy worker leave
@@ -45,15 +51,14 @@ void distributed_controller::_handleWorkersSocketMsg()
     }
 }
 
-void distributed_controller::_allocate_worker_to_island(const std::string& islandId)
+void distributed_controller::_allocate_worker_to_island(const std::string& islandId, const std::vector<std::byte>& workData)
 {
     const std::string workerId = *_freeWorkersPool.begin();
     _freeWorkersPool.erase(workerId);
     _workAllocationMap.emplace(workerId, islandId);
     std::cout << "Island " << islandId << "has been allocated " << workerId << std::endl;
 
-    // TODO: Work data must be sent
-    _workersSocket.send(workerId, MsgType::ALLOCATE_WORK);
+    _workersSocket.send(workerId, MsgType::ALLOCATE_WORK, workData);
 }
 
 void distributed_controller::_handleIslandsSocketMsg()
@@ -64,13 +69,19 @@ void distributed_controller::_handleIslandsSocketMsg()
     switch (type)
     {
         case MsgType::ALLOCATE_WORK:
+            /*
+             * Island Requested Work Allocation
+             *
+             * Allocate worker to this island if there are free workers,
+             * otherwise put island into the _islandsWaitingForAlloc set
+            */
             if (_freeWorkersPool.empty())
             {
-                _islandsWaitingForAlloc.emplace(islandId);
+                _islandsWaitingForAlloc.emplace(islandId, binary);
                 std::cout << "Island " << islandId << "is waiting for allocation" << std::endl;
             } else
             {
-                _allocate_worker_to_island(islandId);
+                _allocate_worker_to_island(islandId, binary);
             }
         break;
     default:

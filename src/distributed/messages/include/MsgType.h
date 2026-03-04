@@ -16,17 +16,17 @@ enum class MsgType
     WORK_RESULTS,
 };
 
-class AllocateWork
+class allocate_work
 {
 public:
     pagmo::algorithm algo;
     pagmo::population pop;
 
-    AllocateWork(pagmo::algorithm algo, pagmo::population pop) : algo(std::move(algo)), pop(std::move(pop))
+    allocate_work(pagmo::algorithm algo, pagmo::population pop) : algo(std::move(algo)), pop(std::move(pop))
     {
     }
 
-    AllocateWork() = default;
+    allocate_work() = default;
 
 private:
     //####################################
@@ -34,6 +34,7 @@ private:
     //####################################
 
     friend class boost::serialization::access;
+
     template <typename Archive>
     void save(Archive& ar, unsigned) const
     {
@@ -49,7 +50,7 @@ private:
         }
         catch (...)
         {
-            *this = AllocateWork{};
+            *this = allocate_work{};
             throw;
         }
     }

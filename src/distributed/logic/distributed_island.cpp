@@ -79,7 +79,7 @@ namespace pagmo
             std::cout << "Running distributed island" << std::endl;
             _dealerSocket->connect("ipc://distributed_controller_islands_socket");
             std::cout << "Distributed island connected" << std::endl;
-            _dealerSocket->send(MsgType::ALLOCATE_WORK);
+            _dealerSocket->send(MsgType::ALLOCATE_WORK, allocate_work{algo, pop});
             std::cout << "Distributed island allocate work sent" << std::endl;
 
             // 3) Wait until controller returns results from worker
@@ -87,6 +87,7 @@ namespace pagmo
             std::cout << "island received [" << static_cast<int>(type) << "] from controller" << std::endl;
 
             // 4) Pass results back to the pagmo::island object
+            // TODO
         };
 
         /*

@@ -26,6 +26,7 @@ namespace distributed
             // TODO: binary_oarchive is not portable??
             boost::archive::binary_oarchive oa(os);
             oa << payload;
+            os.flush();
 
             return serialized;
         }

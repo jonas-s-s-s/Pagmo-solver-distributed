@@ -4,6 +4,7 @@
 #include <random>
 
 #include "UUID.h"
+#include "vector_istreambuf.h"
 
 distributed_worker::distributed_worker(const std::string& controllerAddress) :
     _workerSocket(_ctx),
@@ -64,6 +65,15 @@ void distributed_worker::_handleWorkerSocketMsg()
     {
     case MsgType::ALLOCATE_WORK:
         {
+            vector_istreambuf ibuf(binary);
+            std::istream is(&ibuf);
+            boost::archive::binary_iarchive ia(is);
+
+            allocate_work aw{};
+            ia >> aw; //
+
+            std::cout << aw.algo.get_name() << std::endl;
+
             // TODO: Handle situation if thread is already running
             _start_worker_thread();
         }
