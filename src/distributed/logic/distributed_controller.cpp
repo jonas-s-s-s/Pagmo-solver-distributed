@@ -2,6 +2,10 @@
 
 #include <iostream>
 
+//#####################################################################################
+//# Handling of socket messages
+//#####################################################################################
+
 void distributed_controller::_handleWorkersSocketMsg()
 {
     auto [workerId, type, binary] = _workersSocket.receive();
@@ -16,27 +20,23 @@ void distributed_controller::_handleWorkersSocketMsg()
          * If there are islands waiting for allocating, allocate worker to one of them,
          * otherwise save worker ID into the free workers pool
         */
-
         std::cout << "Worker " << workerId << " joined" << std::endl;
         _freeWorkersPool.emplace(workerId);
 
         if (!_islandsWaitingForAlloc.empty())
         {
-            const auto islandRecord = _islandsWaitingForAlloc.begin();
-            const std::string islandId = islandRecord->first;
-            const std::vector<std::byte> workData = islandRecord->second;
-
-            _islandsWaitingForAlloc.erase(islandRecord);
+            const auto [islandId, workData] = _pop_waiting_island();
             _allocate_worker_to_island(islandId, workData);
         }
 
         std::cout << "Free workers: " << _freeWorkersPool.size() << std::endl;
         break;
+
     case MsgType::WORKER_LEAVE:
 
         _freeWorkersPool.erase(workerId);
-        // TODO: Handle busy worker leave
-        //_busyWorkersPool.erase(senderId);
+        // TODO: Handle busy worker leave - push back into islandsWaitingForAlloc?
+
         break;
     case MsgType::WORK_RESULTS:
         {
@@ -54,16 +54,6 @@ void distributed_controller::_handleWorkersSocketMsg()
     }
 }
 
-void distributed_controller::_allocate_worker_to_island(const std::string& islandId, const std::vector<std::byte>& workData)
-{
-    const std::string workerId = *_freeWorkersPool.begin();
-    _freeWorkersPool.erase(workerId);
-    _workAllocationMap.emplace(workerId, islandId);
-    std::cout << "Island " << islandId << "has been allocated " << workerId << std::endl;
-
-    _workersSocket.send(workerId, MsgType::ALLOCATE_WORK, workData);
-}
-
 void distributed_controller::_handleIslandsSocketMsg()
 {
     auto [islandId, type, binary] = _islandsSocket.receive();
@@ -71,26 +61,56 @@ void distributed_controller::_handleIslandsSocketMsg()
 
     switch (type)
     {
-        case MsgType::ALLOCATE_WORK:
-            /*
-             * Island Requested Work Allocation
-             *
-             * Allocate worker to this island if there are free workers,
-             * otherwise put island into the _islandsWaitingForAlloc set
-            */
-            if (_freeWorkersPool.empty())
-            {
-                _islandsWaitingForAlloc.emplace(islandId, binary);
-                std::cout << "Island " << islandId << "is waiting for allocation" << std::endl;
-            } else
-            {
-                _allocate_worker_to_island(islandId, binary);
-            }
+    case MsgType::ALLOCATE_WORK:
+        /*
+         * Island Requested Work Allocation
+         *
+         * Allocate worker to this island if there are free workers,
+         * otherwise put island into the _islandsWaitingForAlloc set
+        */
+        if (_freeWorkersPool.empty())
+        {
+            _islandsWaitingForAlloc.emplace(islandId, binary);
+            std::cout << "Island " << islandId << "is waiting for allocation" << std::endl;
+        }
+        else
+        {
+            _allocate_worker_to_island(islandId, binary);
+        }
         break;
     default:
         std::cerr << "WARNING: " << islandId << " sent unhandled message type: " << static_cast<int>(type) << std::endl;
     }
 }
+
+//#####################################################################################
+//# Controller data logic
+//#####################################################################################
+
+void distributed_controller::_allocate_worker_to_island(const std::string& islandId,
+                                                        const std::vector<std::byte>& workData)
+{
+    const std::string workerId = *_freeWorkersPool.begin();
+    _freeWorkersPool.erase(workerId);
+    _workAllocationMap.emplace(workerId, islandId);
+    std::cout << islandId << "has been allocated " << workerId << std::endl;
+
+    _workersSocket.send(workerId, MsgType::ALLOCATE_WORK, workData);
+}
+
+std::tuple<std::string, std::vector<std::byte>> distributed_controller::_pop_waiting_island()
+{
+    const auto islandRecord = _islandsWaitingForAlloc.begin();
+    const std::string islandId = islandRecord->first;
+    const std::vector<std::byte> workData = islandRecord->second;
+
+    _islandsWaitingForAlloc.erase(islandRecord);
+    return {islandId, workData};
+}
+
+//#####################################################################################
+//# Sockets setup & initalization
+//#####################################################################################
 
 distributed_controller::distributed_controller(const std::string& controllerAddress) : _workersSocket{_ctx},
     _islandsSocket{_ctx}

@@ -7,16 +7,15 @@
 #include "zmq_addon.hpp"
 
 
+class islands_wait_buffer
+{
+    std::unordered_map<std::string, std::vector<std::byte>> _islandsWithData;
+
+
+};
 
 class distributed_controller
 {
-    // Helper struct to group UDI and its work together
-    struct work_allocation_unit
-    {
-        std::string islandId;
-        std::vector<std::byte> workData;
-    };
-
     zmq::context_t _ctx;
     zmq::active_poller_t _poller;
 
@@ -24,7 +23,9 @@ class distributed_controller
     distributed::router_socket _islandsSocket;
     std::thread _serverThread;
 
+    // Islands which cannot be allocated to any worker (_freeWorkersPool is empty) are stored here along with their data
     std::unordered_map<std::string, std::vector<std::byte>> _islandsWaitingForAlloc{};
+    // Worker nodes ready to be allocated to an island
     std::unordered_set<std::string> _freeWorkersPool{};
     // Pairs of {workerID, islandID} indicate which worker is currently being used by which island
     std::unordered_map<std::string, std::string> _workAllocationMap{};
@@ -33,6 +34,7 @@ class distributed_controller
     void _handleIslandsSocketMsg();
 
     void _allocate_worker_to_island(const std::string& islandId, const std::vector<std::byte>& workData);
+    std::tuple<std::string, std::vector<std::byte>> _pop_waiting_island();
 
 public:
     explicit distributed_controller(const std::string& controllerAddress);
