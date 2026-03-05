@@ -23,8 +23,11 @@ void distributed_controller::_handleWorkersSocketMsg()
         if (!_islandsWaitingForAlloc.empty())
         {
             const auto islandRecord = _islandsWaitingForAlloc.begin();
+            const std::string islandId = islandRecord->first;
+            const std::vector<std::byte> workData = islandRecord->second;
+
             _islandsWaitingForAlloc.erase(islandRecord);
-            _allocate_worker_to_island(islandRecord->first, islandRecord->second);
+            _allocate_worker_to_island(islandId, workData);
         }
 
         std::cout << "Free workers: " << _freeWorkersPool.size() << std::endl;
