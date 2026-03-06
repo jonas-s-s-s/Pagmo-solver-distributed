@@ -4,7 +4,7 @@
 
 namespace islandTest
 {
-    inline constexpr int GEN_COUNT = 100;
+    inline constexpr int GEN_COUNT = 1500;
     inline constexpr int POPULATION_SIZE = 100;
 
     /*

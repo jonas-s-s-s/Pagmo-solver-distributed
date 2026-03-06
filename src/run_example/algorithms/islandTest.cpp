@@ -15,17 +15,18 @@ void islandTest::run_algorithm_on_problem(const pagmo::problem& problem, const p
 {
     pagmo::archipelago archi{};
     // Construct 8 distributed islands and add them to archipelago
-    for (int i = 0; i < 1; ++i)
+    for (int i = 0; i < 4; ++i)
     {
         pagmo::distributed_island dist_island{};
         archi.push_back(pagmo::island{dist_island, algorithm, problem, POPULATION_SIZE});
     }
 
     // Run evolution 2 times on each island of this archi
-    archi.evolve(1);
+    archi.evolve(3);
     // Wait for evolution to finish
     archi.wait_check();
 
+    std::cout << "Main Archipelago: Evolution finished" << std::endl;
     for (int i = 0; i < archi.size(); ++i)
     {
         const auto& isl = archi[i];
@@ -52,8 +53,6 @@ void islandTest::run_algorithm_on_problem(const pagmo::problem& problem, const p
 
 void islandTest::run_zdt(const pagmo::algorithm& algorithm)
 {
-    std::cout << std::endl << "Running ZDT for algorithm: " << algorithm.get_name() << std::endl;
-    std::cout << "==================================================================" << std::endl << std::endl;
     for (int i = 1; i <= 1; ++i) //6
     {
         //std::cout << "-------------------------------------------------------" << std::endl;

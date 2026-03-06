@@ -21,7 +21,10 @@ class distributed_worker
     std::thread _workerThread;
     distributed::pair_socket _threadSocket;
 
-    void _start_worker_thread();
+    // Allows this network client to run in the background (function run_client)
+    std::thread _clientThread;
+
+    void _start_worker_thread(pagmo::algorithm& algo, pagmo::population& pop);
 
     void _handleWorkerSocketMsg();
     void _handleThreadSocketMsg();
@@ -30,4 +33,8 @@ public:
     explicit distributed_worker(const std::string& controllerAddress);
 
     void client_loop();
+    void run_client();
+
+    ~distributed_worker();
 };
+

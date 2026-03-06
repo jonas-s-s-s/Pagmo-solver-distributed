@@ -16,17 +16,17 @@ enum class MsgType
     WORK_RESULTS,
 };
 
-class allocate_work
+class work_container
 {
 public:
     pagmo::algorithm algo;
     pagmo::population pop;
 
-    allocate_work(pagmo::algorithm algo, pagmo::population pop) : algo(std::move(algo)), pop(std::move(pop))
+    work_container(pagmo::algorithm algo, pagmo::population pop) : algo(std::move(algo)), pop(std::move(pop))
     {
     }
 
-    allocate_work() = default;
+    work_container() = default;
 
 private:
     //####################################
@@ -50,7 +50,7 @@ private:
         }
         catch (...)
         {
-            *this = allocate_work{};
+            *this = work_container{};
             throw;
         }
     }

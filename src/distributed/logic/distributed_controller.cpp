@@ -14,21 +14,8 @@ void distributed_controller::_handleWorkersSocketMsg()
     switch (type)
     {
     case MsgType::WORKER_JOIN:
-        /*
-         * New Worker Joined
-         *
-         * If there are islands waiting for allocating, allocate worker to one of them,
-         * otherwise save worker ID into the free workers pool
-        */
         std::cout << "Worker " << workerId << " joined" << std::endl;
-        _freeWorkersPool.emplace(workerId);
-
-        if (!_islandsWaitingForAlloc.empty())
-        {
-            const auto [islandId, workData] = _pop_waiting_island();
-            _allocate_worker_to_island(islandId, workData);
-        }
-
+        _add_free_worker(workerId);
         std::cout << "Free workers: " << _freeWorkersPool.size() << std::endl;
         break;
 
@@ -41,12 +28,12 @@ void distributed_controller::_handleWorkersSocketMsg()
     case MsgType::WORK_RESULTS:
         {
             const auto myIslandId = _workAllocationMap.at(workerId);
+            // Pass results from worker to island
+            _islandsSocket.send(myIslandId, MsgType::WORK_RESULTS, binary);
             // Remove this {workerId, islandId} work allocation
             _workAllocationMap.erase(workerId);
             // Add worker back into the free pool
-            _freeWorkersPool.emplace(workerId);
-            // Pass results from worker to island
-            _islandsSocket.send(myIslandId, MsgType::WORK_RESULTS, binary);
+            _add_free_worker(workerId);
         }
         break;
     default:
@@ -108,8 +95,25 @@ std::tuple<std::string, std::vector<std::byte>> distributed_controller::_pop_wai
     return {islandId, workData};
 }
 
+void distributed_controller::_add_free_worker(const std::string& workerId)
+{
+    /*
+     * A worker is free (joined or finished work)
+     *
+     * If there are islands waiting for allocation, allocate worker to one of them,
+     * otherwise save worker ID into the free workers pool
+    */
+    _freeWorkersPool.emplace(workerId);
+
+    if (!_islandsWaitingForAlloc.empty())
+    {
+        const auto [islandId, workData] = _pop_waiting_island();
+        _allocate_worker_to_island(islandId, workData);
+    }
+}
+
 //#####################################################################################
-//# Sockets setup & initalization
+//# Sockets setup & initialization
 //#####################################################################################
 
 distributed_controller::distributed_controller(const std::string& controllerAddress) : _workersSocket{_ctx},
@@ -127,7 +131,18 @@ distributed_controller::distributed_controller(const std::string& controllerAddr
                     _handleIslandsSocketMsg();
                 });
 
-    _workersSocket.bind(controllerAddress);
+    try
+    {
+        _workersSocket.bind(controllerAddress);
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Socket failed to bind to address " << controllerAddress << " due to the following error: " << e.
+            what() << std::endl;
+        std::cerr << "Check if this port isn't already in use" << std::endl;
+        throw e;
+    }
+
     _islandsSocket.bind("ipc://distributed_controller_islands_socket");
 }
 

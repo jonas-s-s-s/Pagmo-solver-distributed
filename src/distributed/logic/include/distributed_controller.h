@@ -6,14 +6,6 @@
 #include "zmq.hpp"
 #include "zmq_addon.hpp"
 
-
-class islands_wait_buffer
-{
-    std::unordered_map<std::string, std::vector<std::byte>> _islandsWithData;
-
-
-};
-
 class distributed_controller
 {
     zmq::context_t _ctx;
@@ -30,6 +22,7 @@ class distributed_controller
     // Pairs of {workerID, islandID} indicate which worker is currently being used by which island
     std::unordered_map<std::string, std::string> _workAllocationMap{};
 
+    void _add_free_worker(const std::string& workerId);
     void _handleWorkersSocketMsg();
     void _handleIslandsSocketMsg();
 
