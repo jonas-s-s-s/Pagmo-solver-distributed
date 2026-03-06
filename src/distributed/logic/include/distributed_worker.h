@@ -1,4 +1,5 @@
 #pragma once
+#include <numeric>
 #include <thread>
 
 #include "dealer_socket.h"
@@ -6,6 +7,7 @@
 #include "MsgType.h"
 #include "pair_socket.h"
 #include "zmq_addon.hpp"
+#include "pagmo/utils/constrained.hpp"
 
 
 class distributed_worker
@@ -38,9 +40,23 @@ class distributed_worker
 
     /**
      * Spawns a new thread and then uses pagmo::archipelago to evolve the algorithm,
-     * causing multiple CPU cores to be used
+     * causing multiple CPU cores to be used. Multi-objective version.
      */
     void _archipelago_based_worker_multiobjective(pagmo::algorithm& algo, pagmo::population& pop);
+
+    /**
+     * Spawns a new thread and then uses pagmo::archipelago to evolve the algorithm,
+     * causing multiple CPU cores to be used. Single-objective version.
+     */
+    void _archipelago_based_worker_singleobjective(pagmo::algorithm& algo, pagmo::population& pop);
+
+    /**
+     * Base archipelago worker, needs population sorting function which depends on if the problem is multi-objective
+     * or single-objective.
+     */
+    void _archipelago_based_worker(pagmo::algorithm& algo, pagmo::population& pop,
+                                   std::function<std::vector<pagmo::pop_size_t>(
+                                       const std::vector<pagmo::vector_double>&, std::size_t)> popSorter);
 
     enum worker_mode
     {
@@ -59,7 +75,9 @@ public:
      * @param workerMode Can be either SINGLE_THREADED or ARCHIPELAGO_BASED (default)
      * @param archipelagoEvolutionCount How many times to run the archipelago evolution (when using ARCHIPELAGO_BASED)
      */
-    explicit distributed_worker(const std::string& controllerAddress, worker_mode workerMode = ARCHIPELAGO_BASED, unsigned archipelagoEvolutionCount = 4);
+    explicit distributed_worker(const std::string& controllerAddress,
+                                worker_mode workerMode = ARCHIPELAGO_BASED,
+                                unsigned archipelagoEvolutionCount = 1);
 
     void client_loop();
     void run_client();
