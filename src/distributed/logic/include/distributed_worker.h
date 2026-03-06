@@ -76,8 +76,8 @@ public:
      * @param archipelagoEvolutionCount How many times to run the archipelago evolution (when using ARCHIPELAGO_BASED)
      */
     explicit distributed_worker(const std::string& controllerAddress,
-                                worker_mode workerMode = ARCHIPELAGO_BASED,
-                                unsigned archipelagoEvolutionCount = 1);
+                                worker_mode workerMode = SINGLE_THREADED, //TODO: CHANGE
+                                unsigned archipelagoEvolutionCount = 1); //TODO: CHANGE
 
     void client_loop();
     void run_client();

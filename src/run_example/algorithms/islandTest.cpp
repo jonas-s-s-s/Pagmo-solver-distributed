@@ -7,22 +7,41 @@
 #include "pagmo/archipelago.hpp"
 #include "pagmo/problem.hpp"
 #include "pagmo/algorithms/de.hpp"
+#include "pagmo/algorithms/maco.hpp"
+#include "pagmo/algorithms/moead.hpp"
+#include "pagmo/algorithms/moead_gen.hpp"
 #include "pagmo/algorithms/nsga2.hpp"
+#include "pagmo/algorithms/nspso.hpp"
 #include "pagmo/algorithms/xnes.hpp"
 #include "pagmo/problems/cec2014.hpp"
 #include "pagmo/problems/zdt.hpp"
 #include "pagmo/utils/multi_objective.hpp"
 
-void islandTest::run_algorithm_on_problem(const pagmo::problem& problem, const pagmo::algorithm& algorithm)
+void islandTest::run_algorithm_on_problem(const pagmo::problem& problem, const std::vector<pagmo::algorithm>& algorithm)
 {
+    // Proof of concept - Metasolver via "round-robin" algorithm scheduler
+    auto algorithmPtr = algorithm.begin();
+    auto getAlgorithm = [&]()
+    {
+        if (algorithmPtr == algorithm.end())
+        {
+            algorithmPtr = algorithm.begin();
+        }
+
+        const auto& alg = *algorithmPtr;
+        std::advance(algorithmPtr, 1);
+        std::cout << "Choosing algorithm: " << alg.get_name() << std::endl;
+        return alg;
+    };
+
     // TODO: Set-up topology in constructor
     pagmo::archipelago archi{};
 
     // Construct 8 distributed islands and add them to archipelago
-    for (int i = 0; i < 1; ++i)
+    for (int i = 0; i < 8; ++i)
     {
         pagmo::distributed_island dist_island{};
-        archi.push_back(pagmo::island{dist_island, algorithm, problem, POPULATION_SIZE});
+        archi.push_back(pagmo::island{dist_island, getAlgorithm(), problem, POPULATION_SIZE});
     }
 
     // Run evolution 2 times on each island of this archi
@@ -73,7 +92,7 @@ void islandTest::run_algorithm_on_problem(const pagmo::problem& problem, const p
     }
 }
 
-void islandTest::run_zdt(const pagmo::algorithm& algorithm)
+void islandTest::run_zdt(const std::vector<pagmo::algorithm>& algorithm)
 {
     for (int i = 1; i <= 1; ++i) //6
     {
@@ -84,7 +103,7 @@ void islandTest::run_zdt(const pagmo::algorithm& algorithm)
     }
 }
 
-void islandTest::run_cec2014(const pagmo::algorithm& algorithm)
+void islandTest::run_cec2014(const std::vector<pagmo::algorithm>& algorithm)
 {
     //std::cout << std::endl << "Running CEC2014 for algorithm: " << algorithm.get_name() << std::endl;
 
@@ -98,17 +117,32 @@ void islandTest::run_cec2014(const pagmo::algorithm& algorithm)
     }
 }
 
-void islandTest::run_nsga2(const std::function<void(const pagmo::algorithm&)>& problemRunner)
+void islandTest::run_nsga2(const std::function<void(const std::vector<pagmo::algorithm>&)>& problemRunner)
 {
     pagmo::algorithm nsga2{pagmo::nsga2(GEN_COUNT)};
     nsga2.set_verbosity(0);
-    problemRunner(nsga2);
+    problemRunner({nsga2});
 }
 
 
-void islandTest::run_de(const std::function<void(const pagmo::algorithm&)>& problemRunner)
+
+
+void islandTest::run_de(const std::function<void(const std::vector<pagmo::algorithm>&)>& problemRunner)
 {
     pagmo::algorithm algo{pagmo::de(GEN_COUNT)};
     algo.set_verbosity(0);
-    problemRunner(algo);
+    problemRunner({algo});
+}
+
+
+void islandTest::run_meta_multiobjective(const std::function<void(const std::vector<pagmo::algorithm>&)>& problemRunner)
+{
+    pagmo::algorithm nsga2{pagmo::nsga2(GEN_COUNT)};
+    pagmo::algorithm moead{pagmo::moead(GEN_COUNT)};
+    pagmo::algorithm moead_gen{pagmo::moead_gen(GEN_COUNT)};
+    pagmo::algorithm maco{pagmo::maco(GEN_COUNT)};
+    pagmo::algorithm nspso{pagmo::nspso(GEN_COUNT)};
+
+    nsga2.set_verbosity(0);
+    problemRunner({nsga2, moead, moead_gen, maco, nspso});
 }
