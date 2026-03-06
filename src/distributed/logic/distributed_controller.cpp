@@ -2,6 +2,8 @@
 
 #include <iostream>
 
+#include "aixlog.hpp"
+
 //#####################################################################################
 //# Handling of socket messages
 //#####################################################################################
@@ -9,14 +11,14 @@
 void distributed_controller::_handleWorkersSocketMsg()
 {
     auto [workerId, type, binary] = _workersSocket.receive();
-    std::cout << "[" << static_cast<int>(type) << "] from worker" << std::endl;
+    LOG(TRACE) << "Got MsgType[" << static_cast<int>(type) << "] from " << workerId << std::endl;
 
     switch (type)
     {
     case MsgType::WORKER_JOIN:
-        std::cout << "Worker " << workerId << " joined" << std::endl;
+        LOG(TRACE) << "Worker " << workerId << " joined" << std::endl;
         _add_free_worker(workerId);
-        std::cout << "Free workers: " << _freeWorkersPool.size() << std::endl;
+        LOG(TRACE) << "Free workers: " << _freeWorkersPool.size() << std::endl;
         break;
 
     case MsgType::WORKER_LEAVE:
@@ -37,14 +39,14 @@ void distributed_controller::_handleWorkersSocketMsg()
         }
         break;
     default:
-        std::cerr << "WARNING: " << workerId << " sent unhandled message type: " << static_cast<int>(type) << std::endl;
+        LOG(WARNING) << workerId << " sent unhandled message type: " << static_cast<int>(type) << std::endl;
     }
 }
 
 void distributed_controller::_handleIslandsSocketMsg()
 {
     auto [islandId, type, binary] = _islandsSocket.receive();
-    std::cout << "[" << static_cast<int>(type) << "] from island" << std::endl;
+    LOG(TRACE) << "Got MsgType[" << static_cast<int>(type) << "] from " << islandId << std::endl;
 
     switch (type)
     {
@@ -58,7 +60,7 @@ void distributed_controller::_handleIslandsSocketMsg()
         if (_freeWorkersPool.empty())
         {
             _islandsWaitingForAlloc.emplace(islandId, binary);
-            std::cout << "Island " << islandId << "is waiting for allocation" << std::endl;
+            LOG(TRACE) << islandId << "is waiting for allocation" << std::endl;
         }
         else
         {
@@ -66,7 +68,7 @@ void distributed_controller::_handleIslandsSocketMsg()
         }
         break;
     default:
-        std::cerr << "WARNING: " << islandId << " sent unhandled message type: " << static_cast<int>(type) << std::endl;
+        LOG(WARNING) << islandId << " sent unhandled message type: " << static_cast<int>(type) << std::endl;
     }
 }
 
@@ -80,7 +82,7 @@ void distributed_controller::_allocate_worker_to_island(const std::string& islan
     const std::string workerId = *_freeWorkersPool.begin();
     _freeWorkersPool.erase(workerId);
     _workAllocationMap.emplace(workerId, islandId);
-    std::cout << islandId << "has been allocated " << workerId << std::endl;
+    LOG(TRACE) << islandId << "has been allocated " << workerId << std::endl;
 
     _workersSocket.send(workerId, MsgType::ALLOCATE_WORK, workData);
 }
@@ -137,9 +139,9 @@ distributed_controller::distributed_controller(const std::string& controllerAddr
     }
     catch (const std::exception& e)
     {
-        std::cerr << "Socket failed to bind to address " << controllerAddress << " due to the following error: " << e.
+        LOG(ERROR) << "Socket failed to bind to address " << controllerAddress << " due to the following error: " << e.
             what() << std::endl;
-        std::cerr << "Check if this port isn't already in use" << std::endl;
+        LOG(ERROR) << "Check if this port isn't already in use" << std::endl;
         throw e;
     }
 

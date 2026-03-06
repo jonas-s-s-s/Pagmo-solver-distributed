@@ -4,14 +4,18 @@
 #include "islandTest.h"
 #include "vector_istreambuf.h"
 #include "pagmo/algorithms/nsga2.hpp"
-
+#include "aixlog.hpp"
 int main(int argc, char* argv[])
 {
+    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::trace);
+
     std::string address = "tcp://localhost:5000";
     std::thread t;
 
     if (argc >= 2 && argv[1] == std::string("-run-controller"))
     {
+        LOG(TRACE) << "Running controller...\n";
+
         distributed_controller controller{address};
         controller.run_server();
 
@@ -21,6 +25,8 @@ int main(int argc, char* argv[])
     }
     else
     {
+        LOG(TRACE) << "Running worker...\n";
+
         distributed_worker worker{address};
         for (;;)
         {
