@@ -14,8 +14,13 @@ namespace islandTest
     
     void run_zdt(const pagmo::algorithm& algorithm);
 
+    void run_cec2014(const pagmo::algorithm& algorithm);
+
     /*
      * Non-dominated Sorting GA (NSGA2) pagmo::nsga2 M-U-I
      */
     void run_nsga2(const std::function<void(const pagmo::algorithm&)>& problemRunner);
+
+    void run_de(const std::function<void(const pagmo::algorithm&)>& problemRunner);
+
 }

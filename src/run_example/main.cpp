@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
 
         std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
-        islandTest::run_nsga2(islandTest::run_zdt);
+        islandTest::run_de(islandTest::run_cec2014);
     }
     else
     {

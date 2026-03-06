@@ -55,8 +55,8 @@ class distributed_worker
      * or single-objective.
      */
     void _archipelago_based_worker(pagmo::algorithm& algo, pagmo::population& pop,
-                                   std::function<std::vector<pagmo::pop_size_t>(
-                                       const std::vector<pagmo::vector_double>&, std::size_t)> popSorter);
+                                   std::function<std::vector<pagmo::pop_size_t>
+                                       (const std::vector<pagmo::vector_double>&, std::size_t)> popSorter);
 
     enum worker_mode
     {
