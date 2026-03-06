@@ -5,6 +5,8 @@
 
 #include "UUID.h"
 #include "vector_istreambuf.h"
+#include "pagmo/archipelago.hpp"
+#include "pagmo/utils/multi_objective.hpp"
 
 //#####################################################################################
 //# Handling of socket messages
@@ -50,9 +52,9 @@ void distributed_worker::_handleThreadSocketMsg()
 //# Worker logic
 //#####################################################################################
 
-void distributed_worker::_start_worker_thread(pagmo::algorithm& algo, pagmo::population& pop)
+void distributed_worker::_single_threaded_worker(pagmo::algorithm& algo, pagmo::population& pop)
 {
-    std::cout << "Worker thread started. " << std::endl;
+    std::cout << "Single-threaded worker started... " << std::endl;
     _workerThread = std::thread(
         [this, algo, pop]()
         {
@@ -68,13 +70,97 @@ void distributed_worker::_start_worker_thread(pagmo::algorithm& algo, pagmo::pop
         });
 }
 
+void distributed_worker::_archipelago_based_worker_multiobjective(pagmo::algorithm& algo, pagmo::population& pop)
+{
+    std::cout << "Archipelago-based worker started... " << std::endl;
+    _workerThread = std::thread(
+        [this, algo, pop]()
+        {
+            distributed::pair_socket output{this->_ctx};
+            output.connect("inproc://thread_socket");
+
+            unsigned coreCount = std::thread::hardware_concurrency();
+            if (coreCount == 0)
+            {
+                std::cout << "Defaulting to 8 islands (Cannot detect core count)" << std::endl;
+                coreCount = 8;
+            }
+            else
+            {
+                std::cout << "Using " << coreCount << " islands" << std::endl;
+            }
+            std::cout << "Using algorithm: " << algo.get_name() << std::endl;
+
+            // 1) Run the evolution on multiple parallel islands and wait for it to finish
+            // TODO: Set topology?
+            // TODO: Maybe divide pop size by coreCount?
+            pagmo::archipelago archi{coreCount, algo, pop.get_problem(), pop.size()};
+            archi.evolve(_archipelagoEvolutionCount);
+            archi.wait_check();
+
+            // 2) Collect individuals of all island's populations into this vector
+            std::vector<pagmo::vector_double> allPopulations;
+            for (auto isl : archi)
+            {
+                const auto islPop = isl.get_population().get_x();
+                allPopulations.insert(allPopulations.end(), islPop.begin(), islPop.end());
+            }
+            std::cout << "Size of allPopulations: " << allPopulations.size() << std::endl;
+
+            // 3) Sort and select POPULATION_SIZE best individuals
+            const auto newIndividualsIndexes = pagmo::select_best_N_mo(allPopulations, pop.size());
+
+            // 4) Construct the new population object, using the first island's state
+            auto firstIslPop = archi[0].get_population();
+            pagmo::population newPop{
+                firstIslPop.get_problem(),
+                newIndividualsIndexes.size(),
+                firstIslPop.get_seed() // TODO: Maybe remove this so the seed is different each time?
+            };
+
+            // 5) Fill the newPop object with new individuals
+            for (int i = 0; i < newIndividualsIndexes.size(); ++i)
+            {
+                const auto individualIndex = newIndividualsIndexes[i];
+                newPop.set_x(i, allPopulations[individualIndex]);
+            }
+
+            // 6) Send the algorithm (taken from the first island) and new population back to controller
+            output.send(MsgType::WORK_RESULTS, work_container{archi[0].get_algorithm(), newPop});
+
+            std::cout << "Worker thread finished. " << std::endl;
+        });
+}
+
+
+void distributed_worker::_start_worker_thread(pagmo::algorithm& algo, pagmo::population& pop)
+{
+    const bool isMultiObjective = pop.get_problem().get_nobj() > 1;
+
+    if (_workerMode == ARCHIPELAGO_BASED && isMultiObjective)
+    {
+        _archipelago_based_worker_multiobjective(algo, pop);
+    }
+    else if (_workerMode == ARCHIPELAGO_BASED && !isMultiObjective)
+    {
+        //TODO
+    }
+    else
+    {
+        _single_threaded_worker(algo, pop);
+    }
+}
+
 //#####################################################################################
 //# Sockets setup & initialization
 //#####################################################################################
 
-distributed_worker::distributed_worker(const std::string& controllerAddress) :
+distributed_worker::distributed_worker(const std::string& controllerAddress, const worker_mode workerMode,
+                                       const unsigned archipelagoEvolutionCount) :
     _workerSocket(_ctx),
-    _threadSocket(_ctx)
+    _threadSocket(_ctx),
+    _workerMode(workerMode),
+    _archipelagoEvolutionCount(archipelagoEvolutionCount)
 {
     // Poller callback - worker socket has message
     _poller.add(_workerSocket.get_socket(), zmq::event_flags::pollin,

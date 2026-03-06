@@ -13,16 +13,18 @@
 
 void islandTest::run_algorithm_on_problem(const pagmo::problem& problem, const pagmo::algorithm& algorithm)
 {
+    // TODO: Set-up topology in constructor
     pagmo::archipelago archi{};
+
     // Construct 8 distributed islands and add them to archipelago
-    for (int i = 0; i < 4; ++i)
+    for (int i = 0; i < 1; ++i)
     {
         pagmo::distributed_island dist_island{};
         archi.push_back(pagmo::island{dist_island, algorithm, problem, POPULATION_SIZE});
     }
 
     // Run evolution 2 times on each island of this archi
-    archi.evolve(3);
+    archi.evolve(1);
     // Wait for evolution to finish
     archi.wait_check();
 

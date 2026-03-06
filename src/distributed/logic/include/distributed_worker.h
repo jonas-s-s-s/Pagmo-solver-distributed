@@ -7,6 +7,7 @@
 #include "pair_socket.h"
 #include "zmq_addon.hpp"
 
+
 class distributed_worker
 {
     zmq::context_t _ctx;
@@ -29,12 +30,39 @@ class distributed_worker
     void _handleWorkerSocketMsg();
     void _handleThreadSocketMsg();
 
+    /**
+     * Spawns a new thread and then simply calls algo.evolve(pop), this causes
+     * the evolution algorithm to use only a single CPU core
+     */
+    void _single_threaded_worker(pagmo::algorithm& algo, pagmo::population& pop);
+
+    /**
+     * Spawns a new thread and then uses pagmo::archipelago to evolve the algorithm,
+     * causing multiple CPU cores to be used
+     */
+    void _archipelago_based_worker_multiobjective(pagmo::algorithm& algo, pagmo::population& pop);
+
+    enum worker_mode
+    {
+        SINGLE_THREADED,
+        ARCHIPELAGO_BASED,
+    };
+
+    worker_mode _workerMode;
+
+    unsigned _archipelagoEvolutionCount;
+
 public:
-    explicit distributed_worker(const std::string& controllerAddress);
+    /**
+     * Constructs a distributed worker, which will connect and accept work from a specified controller
+     * @param controllerAddress Controller's address
+     * @param workerMode Can be either SINGLE_THREADED or ARCHIPELAGO_BASED (default)
+     * @param archipelagoEvolutionCount How many times to run the archipelago evolution (when using ARCHIPELAGO_BASED)
+     */
+    explicit distributed_worker(const std::string& controllerAddress, worker_mode workerMode = ARCHIPELAGO_BASED, unsigned archipelagoEvolutionCount = 4);
 
     void client_loop();
     void run_client();
 
     ~distributed_worker();
 };
-
