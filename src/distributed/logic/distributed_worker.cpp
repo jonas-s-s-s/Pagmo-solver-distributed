@@ -3,7 +3,6 @@
 #include <iostream>
 #include <random>
 
-#include "aixlog.hpp"
 #include "UUID.h"
 #include "vector_istreambuf.h"
 #include "pagmo/archipelago.hpp"
@@ -16,7 +15,8 @@
 void distributed_worker::_handleWorkerSocketMsg()
 {
     auto [type, binary] = _workerSocket.receive();
-    LOG(TRACE) << "Got MsgType[" << static_cast<int>(type) << "] from controller" << std::endl;
+
+    std::cout << "[" << static_cast<int>(type) << "] from controller" << std::endl;
 
     switch (type)
     {
@@ -35,7 +35,7 @@ void distributed_worker::_handleWorkerSocketMsg()
         }
         break;
     default:
-        LOG(WARNING) << "controller sent unhandled message type: " << static_cast<int>(type) << std::endl;
+        std::cerr << "WARNING: controller sent unhandled message type: " << static_cast<int>(type) << std::endl;
     }
 }
 
@@ -54,19 +54,19 @@ void distributed_worker::_handleThreadSocketMsg()
 
 void distributed_worker::_single_threaded_worker(pagmo::algorithm& algo, pagmo::population& pop)
 {
-    LOG(TRACE) << "Single-threaded worker started... " << std::endl;
+    std::cout << "Single-threaded worker started... " << std::endl;
     _workerThread = std::thread(
         [this, algo, pop]()
         {
             distributed::pair_socket output{this->_ctx};
             output.connect("inproc://thread_socket");
 
-            LOG(TRACE) << "Running algorithm: " << algo.get_name() << std::endl;
+            std::cout << "Running algorithm: " << algo.get_name() << std::endl;
             const pagmo::population new_pop = algo.evolve(pop);
 
             output.send(MsgType::WORK_RESULTS, work_container{algo, new_pop});
 
-            LOG(TRACE) << "Worker thread finished. " << std::endl;
+            std::cout << "Worker thread finished. " << std::endl;
         });
 }
 
@@ -85,14 +85,14 @@ void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo,
             unsigned coreCount = std::thread::hardware_concurrency();
             if (coreCount == 0)
             {
-                LOG(INFO) << "Defaulting to 8 islands (Cannot detect core count)" << std::endl;
+                std::cout << "Defaulting to 8 islands (Cannot detect core count)" << std::endl;
                 coreCount = 8;
             }
             else
             {
-                LOG(DEBUG) << "Using " << coreCount << " islands" << std::endl;
+                std::cout << "Using " << coreCount << " islands" << std::endl;
             }
-            LOG(TRACE) << "Using algorithm: " << algo.get_name() << std::endl;
+            std::cout << "Using algorithm: " << algo.get_name() << std::endl;
 
             // 1) Run the evolution on multiple parallel islands and wait for it to finish
             // TODO: Set topology?
@@ -111,7 +111,7 @@ void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo,
                 allPopulations.insert(allPopulations.end(), islPop.begin(), islPop.end());
                 allFitnesses.insert(allFitnesses.end(), islFit.begin(), islFit.end());
             }
-            LOG(DEBUG) << "Size of allPopulations: " << allPopulations.size() << std::endl;
+            std::cout << "Size of allPopulations: " << allPopulations.size() << std::endl;
 
             // 3) Sort and select POPULATION_SIZE best individuals
             const auto newIndividualsIndexes = popSorter(allFitnesses, pop.size());
@@ -134,13 +134,13 @@ void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo,
             // 6) Send the algorithm (taken from the first island) and new population back to controller
             output.send(MsgType::WORK_RESULTS, work_container{archi[0].get_algorithm(), newPop});
 
-            LOG(TRACE) << "Worker thread finished. " << std::endl;
+            std::cout << "Worker thread finished. " << std::endl;
         });
 }
 
 void distributed_worker::_archipelago_based_worker_singleobjective(pagmo::algorithm& algo, pagmo::population& pop)
 {
-    LOG(TRACE) << "Archipelago-based worker (singe-objective) started... " << std::endl;
+    std::cout << "Archipelago-based worker (singe-objective) started... " << std::endl;
 
     const auto prob = pop.get_problem();
     const auto singleObjectiveSort = [prob](const std::vector<pagmo::vector_double>& fitness, const std::size_t N)
@@ -165,7 +165,7 @@ void distributed_worker::_archipelago_based_worker_singleobjective(pagmo::algori
 
 void distributed_worker::_archipelago_based_worker_multiobjective(pagmo::algorithm& algo, pagmo::population& pop)
 {
-    LOG(TRACE) << "Archipelago-based worker (multi-objective) started... " << std::endl;
+    std::cout << "Archipelago-based worker (multi-objective) started... " << std::endl;
 
     const auto multiObjectiveSort = [](const std::vector<pagmo::vector_double>& fitness, std::size_t N)
     {
