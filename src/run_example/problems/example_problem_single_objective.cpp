@@ -1,0 +1,25 @@
+#include "include/example_problem_single_objective.h"
+
+pagmo::vector_double example_problem_single_objective::fitness(const pagmo::vector_double& dv) const
+{
+    return {
+        dv[0] * dv[3] * (dv[0] + dv[1] + dv[2]) + dv[2], // objfun
+        dv[0] * dv[0] + dv[1] * dv[1] + dv[2] * dv[2] + dv[3] * dv[3] - 40., // equality con.
+        25. - dv[0] * dv[1] * dv[2] * dv[3] // inequality con.
+    };
+}
+
+pagmo::vector_double::size_type example_problem_single_objective::get_nec() const
+{
+    return 1;
+}
+
+pagmo::vector_double::size_type example_problem_single_objective::get_nic() const
+{
+    return 1;
+}
+
+std::pair<pagmo::vector_double, pagmo::vector_double> example_problem_single_objective::get_bounds() const
+{
+    return {{1., 1., 1., 1.}, {5., 5., 5., 5.}};
+}

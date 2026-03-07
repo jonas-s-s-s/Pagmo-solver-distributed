@@ -1,4 +1,4 @@
 add_library(island_test islandTest.cpp)
 target_include_directories(island_test PUBLIC include)
 
-target_link_libraries(island_test PUBLIC pagmo distributed)
+target_link_libraries(island_test PUBLIC pagmo problems distributed)
