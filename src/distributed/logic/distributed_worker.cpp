@@ -6,6 +6,7 @@
 #include "UUID.h"
 #include "vector_istreambuf.h"
 #include "pagmo/archipelago.hpp"
+#include "pagmo/islands/thread_island.hpp"
 #include "pagmo/utils/multi_objective.hpp"
 
 //#####################################################################################
@@ -70,53 +71,77 @@ void distributed_worker::_single_threaded_worker(pagmo::algorithm& algo, pagmo::
         });
 }
 
+
+unsigned distributed_worker::_compute_optimal_island_count()
+{
+    unsigned islandCount = std::thread::hardware_concurrency();
+    if (islandCount == 0)
+    {
+        std::cout << "Defaulting to 8 islands (Cannot detect core count)" << std::endl;
+        islandCount = 8;
+    }
+    else
+    {
+        std::cout << "Using " << islandCount << " islands" << std::endl;
+    }
+    return islandCount;
+}
+
+std::tuple<std::vector<pagmo::vector_double>, std::vector<pagmo::vector_double>> distributed_worker::_merge_populations(
+    pagmo::archipelago archi)
+{
+    std::vector<pagmo::vector_double> allPopulations{};
+    std::vector<pagmo::vector_double> allFitnesses{};
+    for (const auto& isl : archi)
+    {
+        auto islPop = isl.get_population().get_x();
+        auto islFit = isl.get_population().get_f();
+        allPopulations.insert(allPopulations.end(), islPop.begin(), islPop.end());
+        allFitnesses.insert(allFitnesses.end(), islFit.begin(), islFit.end());
+    }
+
+    return {allPopulations, allFitnesses};
+}
+
+
 void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo,
                                                    pagmo::population& pop,
-                                                   std::function<std::vector<pagmo::pop_size_t>
+                                                   const std::function<std::vector<pagmo::pop_size_t>
                                                        (const std::vector<pagmo::vector_double>&,
-                                                        std::size_t)> popSorter)
+                                                        std::size_t)>& popSorter)
 {
     _workerThread = std::thread(
         [this, algo, pop, popSorter]()
         {
+            // 1) Set up socket for communicating with the parent thread
             distributed::pair_socket output{this->_ctx};
             output.connect("inproc://thread_socket");
 
-            unsigned coreCount = std::thread::hardware_concurrency();
-            if (coreCount == 0)
-            {
-                std::cout << "Defaulting to 8 islands (Cannot detect core count)" << std::endl;
-                coreCount = 8;
-            }
-            else
-            {
-                std::cout << "Using " << coreCount << " islands" << std::endl;
-            }
-            std::cout << "Using algorithm: " << algo.get_name() << std::endl;
+            // 2) Get island count based on hardware core count
+            const unsigned islandCount = _compute_optimal_island_count();
 
-            // 1) Run the evolution on multiple parallel islands and wait for it to finish
-            // TODO: Set topology?
-            // TODO: Maybe divide pop size by coreCount?
-            pagmo::archipelago archi{coreCount, algo, pop.get_problem(), pop.size()};
+            // 3) Construct and initialize islands with our algorithm and population (pop includes problem)
+            pagmo::archipelago archi{}; // TODO: Set archi topology? Maybe divide pop size by coreCount?
+            for (int i = 0; i < islandCount; ++i)
+            {
+                // Uses the EXISTING population as sent from controller, instead of creating a new one
+                // UDI will be either thread_island or fork_island (chosen internally)
+                archi.push_back(pagmo::island{algo, pop});
+            }
+
+            // 4) Run evolution on all islands in parallel
+            std::cout << "Using algorithm: " << algo.get_name() << std::endl;
             archi.evolve(_archipelagoEvolutionCount);
             archi.wait_check();
 
-            // 2) Collect individuals of all island's populations into this vector, together with their fitness
-            std::vector<pagmo::vector_double> allPopulations{};
-            std::vector<pagmo::vector_double> allFitnesses{};
-            for (const auto& isl : archi)
-            {
-                auto islPop = isl.get_population().get_x();
-                auto islFit = isl.get_population().get_f();
-                allPopulations.insert(allPopulations.end(), islPop.begin(), islPop.end());
-                allFitnesses.insert(allFitnesses.end(), islFit.begin(), islFit.end());
-            }
+            // 5) Merge individuals (and their fitness) from all islands into two vectors
+            const auto [allPopulations, allFitnesses] = _merge_populations(archi);
             std::cout << "Size of allPopulations: " << allPopulations.size() << std::endl;
 
-            // 3) Sort and select POPULATION_SIZE best individuals
+            // 6) Sort and select POPULATION_SIZE best individuals
             const auto newIndividualsIndexes = popSorter(allFitnesses, pop.size());
 
-            // 4) Construct the new population object, using the first island's state
+            // 7) Construct the new population object, using the first island's state
             auto firstIslPop = archi[0].get_population();
             pagmo::population newPop{
                 firstIslPop.get_problem(),
@@ -124,14 +149,14 @@ void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo,
                 firstIslPop.get_seed() // TODO: Maybe remove this so the seed is different each time?
             };
 
-            // 5) Fill the newPop object with new individuals
+            // 8) Fill the newPop object with new individuals (best POPULATION_SIZE individuals)
             for (std::size_t i = 0; i < newIndividualsIndexes.size(); ++i)
             {
                 const auto individualIndex = newIndividualsIndexes[i];
                 newPop.set_x(i, allPopulations[individualIndex]);
             }
 
-            // 6) Send the algorithm (taken from the first island) and new population back to controller
+            // 9) Send the algorithm (taken from the first island) and new population back to controller
             output.send(MsgType::WORK_RESULTS, work_container{archi[0].get_algorithm(), newPop});
 
             std::cout << "Worker thread finished. " << std::endl;

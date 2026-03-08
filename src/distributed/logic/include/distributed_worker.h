@@ -7,6 +7,7 @@
 #include "MsgType.h"
 #include "pair_socket.h"
 #include "zmq_addon.hpp"
+#include "pagmo/archipelago.hpp"
 #include "pagmo/utils/constrained.hpp"
 
 
@@ -55,8 +56,22 @@ class distributed_worker
      * or single-objective.
      */
     void _archipelago_based_worker(pagmo::algorithm& algo, pagmo::population& pop,
-                                   std::function<std::vector<pagmo::pop_size_t>
-                                       (const std::vector<pagmo::vector_double>&, std::size_t)> popSorter);
+                                   const std::function<std::vector<pagmo::pop_size_t>
+                                       (const std::vector<pagmo::vector_double>&, std::size_t)>& popSorter);
+
+    /**
+     * Helper function to figure out the optimal island count for this archipelago worker based on hardware core count
+     * @return Optimal number of islands
+     */
+    static unsigned _compute_optimal_island_count();
+
+    /**
+     * Helper function to merge the population of all islands (and their fitness) into two vectors
+     * @param archi Input archipelago containing islands
+     * @return Tuple of [allPopulations, allFitnesses]
+     */
+    static std::tuple<std::vector<pagmo::vector_double>, std::vector<pagmo::vector_double>> _merge_populations(
+        pagmo::archipelago archi);
 
     enum worker_mode
     {
