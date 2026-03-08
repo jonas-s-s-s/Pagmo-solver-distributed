@@ -1,0 +1,2 @@
+add_library(distributed_dynamic INTERFACE)
+target_include_directories(distributed_dynamic INTERFACE include)

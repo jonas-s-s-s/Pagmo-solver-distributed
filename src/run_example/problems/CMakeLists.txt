@@ -1,4 +1,4 @@
-add_library(problems example_problem.cpp)
+add_library(problems example_problem_single_objective.cpp)
 target_include_directories(problems PUBLIC include)
 
 target_link_libraries(problems PUBLIC pagmo distributed)

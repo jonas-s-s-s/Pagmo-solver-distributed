@@ -21,6 +21,7 @@ void distributed_controller::_handleWorkersSocketMsg()
 
     case MsgType::WORKER_LEAVE:
 
+        // TODO: Worker keepalive?
         _freeWorkersPool.erase(workerId);
         // TODO: Handle busy worker leave - push back into islandsWaitingForAlloc?
 
