@@ -78,7 +78,7 @@ public:
 
         if (has_dlclose_failed(portable_dlclose(_handle)))
         {
-            throw std::runtime_error(error_msg);
+            throw std::runtime_error{error_msg()};
         }
 
         _handle = nullptr;
