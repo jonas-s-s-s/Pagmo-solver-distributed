@@ -1,4 +1,4 @@
-#include "include/example_problem_single_objective.h"
+#include "example_problem_single_objective.h"
 
 pagmo::vector_double example_problem_single_objective::fitness(const pagmo::vector_double& dv) const
 {
@@ -22,4 +22,19 @@ pagmo::vector_double::size_type example_problem_single_objective::get_nic() cons
 std::pair<pagmo::vector_double, pagmo::vector_double> example_problem_single_objective::get_bounds() const
 {
     return {{1., 1., 1., 1.}, {5., 5., 5., 5.}};
+}
+
+std::string example_problem_single_objective::get_lib_file_name()
+{
+    return "problems";
+}
+
+example_problem_single_objective* allocator()
+{
+    return new example_problem_single_objective();
+}
+
+void deleter(example_problem_single_objective* ptr)
+{
+    delete ptr;
 }

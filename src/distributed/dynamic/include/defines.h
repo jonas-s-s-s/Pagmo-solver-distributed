@@ -36,7 +36,6 @@ inline std::string error_msg()
 }
 
 #elif defined(__linux__) || defined(__APPLE__)
-
 #include <dlfcn.h>
 
 using HANDLE_TYPE = void*;
@@ -70,3 +69,22 @@ inline std::string error_msg()
 #else
 #error "Dynamic library loader is not supported on this platform (none of the macros: __linux__, __APPLE__ or WIN32 are defined)"
 #endif
+
+/*
+ * Helper inline function to get the correct dynamic library file extension based on OS
+ */
+inline constexpr std::string portable_dll_extension()
+{
+#if defined(WIN32)
+    return ".dll";
+
+#elif defined(__APPLE__)
+    return ".dylib";
+
+#elif defined(__linux__)
+    return ".so";
+
+#else
+#error "Dynamic library extension is not defined for this platform"
+#endif
+}
