@@ -16,12 +16,15 @@ namespace islandTest
 
     void run_cec2014(const std::vector<pagmo::algorithm>& algorithm);
 
+    void run_dll_problem(const std::vector<pagmo::algorithm>& algorithm);
     /*
      * Non-dominated Sorting GA (NSGA2) pagmo::nsga2 M-U-I
      */
     void run_nsga2(const std::function<void(const std::vector<pagmo::algorithm>&)>& problemRunner);
 
     void run_de(const std::function<void(const std::vector<pagmo::algorithm>&)>& problemRunner);
+
+    void run_gaco(const std::function<void(const std::vector<pagmo::algorithm>&)>& problemRunner);
 
     void run_meta_multiobjective(const std::function<void(const std::vector<pagmo::algorithm>&)>& problemRunner);
 

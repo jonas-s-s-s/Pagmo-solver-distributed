@@ -8,7 +8,7 @@
 
 /**
  * - Dynamic library loader providing a POSIX / Win32 interface for loading a C++ dynamic library
- * - Intended to load a class with "allocator" and "deleter" functions specified
+ * - The header should have "allocator" and "deleter" functions specified, the "run_after_load" function may be specified as well
  * @tparam T The class contained within this library
  */
 template <class T>
@@ -19,13 +19,20 @@ private:
     std::string _pathToLib;
     std::string _allocClassSymbol;
     std::string _deleteClassSymbol;
+    std::string _runAfterLoadClassSymbol;
+
+    bool _afterLoadExecuted = false;
 
 public:
     explicit lib_loader(std::string pathToLib,
                         std::string allocClassSymbol = "allocator",
-                        std::string deleteClassSymbol = "deleter") :
-        _handle(nullptr), _pathToLib(std::move(pathToLib)),
-        _allocClassSymbol(std::move(allocClassSymbol)), _deleteClassSymbol(std::move(deleteClassSymbol))
+                        std::string deleteClassSymbol = "deleter",
+                        std::string _runAfterLoadClassSymbol = "run_after_load") :
+        _handle(nullptr),
+        _pathToLib(std::move(pathToLib)),
+        _allocClassSymbol(std::move(allocClassSymbol)),
+        _deleteClassSymbol(std::move(deleteClassSymbol)),
+        _runAfterLoadClassSymbol(std::move(_runAfterLoadClassSymbol))
     {
     }
 
@@ -57,15 +64,26 @@ public:
         auto allocFunc = reinterpret_cast<allocClass>(portable_dlsym(_handle, _allocClassSymbol.c_str()));
         auto deleteFunc = reinterpret_cast<deleteClass>(portable_dlsym(_handle, _deleteClassSymbol.c_str()));
 
+        // If run_after_load exists, run it (only once)
+        if (!_afterLoadExecuted)
+        {
+            _afterLoadExecuted = true;
+
+            auto runAfterLoadFunc = reinterpret_cast<allocClass>(portable_dlsym(
+                _handle, _runAfterLoadClassSymbol.c_str()));
+            if (runAfterLoadFunc)
+            {
+                runAfterLoadFunc();
+            }
+        }
+
         if (!allocFunc || !deleteFunc)
         {
             close_lib();
             throw std::runtime_error("Can't find allocator or deleter symbol in " + _pathToLib);
         }
 
-        return std::shared_ptr<T>(
-            allocFunc(),
-            [deleteFunc](T* p) { deleteFunc(p); });
+        return std::shared_ptr<T>(allocFunc(), [deleteFunc](T* p) { deleteFunc(p); });
     }
 
     /**

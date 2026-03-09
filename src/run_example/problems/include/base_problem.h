@@ -2,6 +2,7 @@
 #include <string>
 
 #include "pagmo/types.hpp"
+#include <pagmo/s11n.hpp>
 
 class base_problem
 {
@@ -22,4 +23,17 @@ public:
     virtual std::string get_lib_file_name() = 0;
 
     virtual ~base_problem() = default;
+
+private:
+    //####################################
+    //# BOOST SERIALIZE
+    //####################################
+
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void serialize(Archive&, const unsigned int)
+    {
+    }
 };
+BOOST_SERIALIZATION_ASSUME_ABSTRACT(base_problem)

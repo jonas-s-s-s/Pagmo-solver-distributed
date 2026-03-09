@@ -12,16 +12,6 @@
 
 int main(int argc, char* argv[])
 {
-    lib_loader<base_problem> ll{"./problems" + portable_dll_extension()};
-    ll.open_lib();
-    std::shared_ptr<base_problem> bp = ll.get_instance();
-    dll_problem_wrapper dpw{bp, bp->get_lib_file_name()};
-
-    std::cout << bp->get_lib_file_name() << std::endl;
-
-    const pagmo::algorithm algo{pagmo::gaco(100)};
-    pagmo::population pop{dpw, 24};
-
     /*
     std::string address = "tcp://localhost:5000";
     std::thread t;

@@ -2,8 +2,10 @@
 #include "base_problem.h"
 #include "pagmo/types.hpp"
 #include "dll_visibility.h"
+#include <pagmo/s11n.hpp>
+#include <pagmo/detail/s11n_wrappers.hpp>
 
-class DLL_PUBLIC example_problem_single_objective : base_problem
+class DLL_PUBLIC example_problem_single_objective : public base_problem
 {
 public:
     // Implementation of the objective function.
@@ -23,7 +25,39 @@ public:
     ~example_problem_single_objective() override
     {
     };
+private:
+    //####################################
+    //# BOOST SERIALIZE
+    //####################################
+
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void save(Archive& ar, unsigned) const
+    {
+        pagmo::detail::to_archive(ar);
+    }
+
+    template <typename Archive>
+    void load(Archive& ar, unsigned)
+    {
+        try
+        {
+            pagmo::detail::from_archive(ar);
+        }
+        catch (...)
+        {
+            *this = example_problem_single_objective{};
+            throw;
+        }
+    }
+
+    BOOST_SERIALIZATION_SPLIT_MEMBER()
+
 };
+BOOST_CLASS_EXPORT_KEY(example_problem_single_objective)
+
+extern "C" DLL_PUBLIC void run_after_load();
 
 extern "C" DLL_PUBLIC example_problem_single_objective* allocator();
 

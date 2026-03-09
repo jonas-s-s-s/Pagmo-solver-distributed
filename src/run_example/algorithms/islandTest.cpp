@@ -1,12 +1,16 @@
 #include "islandTest.h"
 
+#include "base_problem.h"
 #include "distributed_controller.h"
 #include "distributed_island.h"
+#include "dll_problem_wrapper.h"
+#include "lib_loader.h"
 #include "pagmo/algorithms/pso.hpp"
 #include "pagmo/algorithm.hpp"
 #include "pagmo/archipelago.hpp"
 #include "pagmo/problem.hpp"
 #include "pagmo/algorithms/de.hpp"
+#include "pagmo/algorithms/gaco.hpp"
 #include "pagmo/algorithms/maco.hpp"
 #include "pagmo/algorithms/moead.hpp"
 #include "pagmo/algorithms/moead_gen.hpp"
@@ -117,6 +121,18 @@ void islandTest::run_cec2014(const std::vector<pagmo::algorithm>& algorithm)
     }
 }
 
+void islandTest::run_dll_problem(const std::vector<pagmo::algorithm>& algorithm)
+{
+    lib_loader<base_problem> loader{"./problems" + portable_dll_extension()};
+    loader.open_lib();
+    const std::shared_ptr<base_problem> baseProb = loader.get_instance();
+    dll_problem_wrapper probWrapper{baseProb, baseProb->get_lib_file_name()};
+
+    const pagmo::problem prob{probWrapper};
+    run_algorithm_on_problem(prob, algorithm);
+}
+
+
 void islandTest::run_nsga2(const std::function<void(const std::vector<pagmo::algorithm>&)>& problemRunner)
 {
     pagmo::algorithm nsga2{pagmo::nsga2(GEN_COUNT)};
@@ -125,11 +141,16 @@ void islandTest::run_nsga2(const std::function<void(const std::vector<pagmo::alg
 }
 
 
-
-
 void islandTest::run_de(const std::function<void(const std::vector<pagmo::algorithm>&)>& problemRunner)
 {
     pagmo::algorithm algo{pagmo::de(GEN_COUNT)};
+    algo.set_verbosity(0);
+    problemRunner({algo});
+}
+
+void islandTest::run_gaco(const std::function<void(const std::vector<pagmo::algorithm>&)>& problemRunner)
+{
+    pagmo::algorithm algo{pagmo::gaco(GEN_COUNT)};
     algo.set_verbosity(0);
     problemRunner({algo});
 }
