@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 
-#include "../../problems/include/base_problem.h"
+#include "base_problem.h"
 #include "pagmo/types.hpp"
 #include <pagmo/s11n.hpp>
 #include <pagmo/detail/s11n_wrappers.hpp>

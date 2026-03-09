@@ -1,6 +1,5 @@
-#include "example_problem_single_objective.h"
 
-BOOST_CLASS_EXPORT_IMPLEMENT(example_problem_single_objective)
+#include "example_problem_single_objective.h"
 
 pagmo::vector_double example_problem_single_objective::fitness(const pagmo::vector_double& dv) const
 {
@@ -34,11 +33,7 @@ std::string example_problem_single_objective::get_lib_file_name()
 // Function called by lib_loader after this dynamic library is loaded
 void run_after_load()
 {
-    // Force boost serialization class registration
-    boost::serialization::void_cast_register<
-        example_problem_single_objective,
-        base_problem
-    >();
+    boost::serialization::void_cast_register<example_problem_single_objective, base_problem>();
 }
 
 example_problem_single_objective* allocator()
@@ -50,3 +45,5 @@ void deleter(example_problem_single_objective* ptr)
 {
     delete ptr;
 }
+
+BOOST_CLASS_EXPORT_IMPLEMENT(example_problem_single_objective)

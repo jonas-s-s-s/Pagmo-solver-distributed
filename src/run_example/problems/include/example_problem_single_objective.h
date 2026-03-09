@@ -4,6 +4,7 @@
 #include "dll_visibility.h"
 #include <pagmo/s11n.hpp>
 #include <pagmo/detail/s11n_wrappers.hpp>
+#include <boost/serialization/extended_type_info_no_rtti.hpp>
 
 class DLL_PUBLIC example_problem_single_objective : public base_problem
 {
@@ -55,10 +56,17 @@ private:
     BOOST_SERIALIZATION_SPLIT_MEMBER()
 
 };
-BOOST_CLASS_EXPORT_KEY(example_problem_single_objective)
+
 
 extern "C" DLL_PUBLIC void run_after_load();
 
 extern "C" DLL_PUBLIC example_problem_single_objective* allocator();
 
 extern "C" DLL_PUBLIC void deleter(example_problem_single_objective* ptr);
+
+
+BOOST_CLASS_EXPORT_KEY(example_problem_single_objective)
+BOOST_CLASS_TYPE_INFO(
+    example_problem_single_objective,
+    boost::serialization::extended_type_info_no_rtti<example_problem_single_objective>
+)

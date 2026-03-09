@@ -1,6 +1,6 @@
 #include "islandTest.h"
 
-#include "base_problem.h"
+#include "include/base_problem.h"
 #include "distributed_controller.h"
 #include "distributed_island.h"
 #include "dll_problem_wrapper.h"
@@ -42,7 +42,7 @@ void islandTest::run_algorithm_on_problem(const pagmo::problem& problem, const s
     pagmo::archipelago archi{};
 
     // Construct 8 distributed islands and add them to archipelago
-    for (int i = 0; i < 8; ++i)
+    for (int i = 0; i < 1; ++i)
     {
         pagmo::distributed_island dist_island{};
         archi.push_back(pagmo::island{dist_island, getAlgorithm(), problem, POPULATION_SIZE});

@@ -36,4 +36,7 @@ private:
     {
     }
 };
+BOOST_CLASS_TRACKING(base_problem, boost::serialization::track_always)
 BOOST_SERIALIZATION_ASSUME_ABSTRACT(base_problem)
+BOOST_CLASS_EXPORT_KEY(base_problem)
+//BOOST_CLASS_EXPORT(base_problem)
