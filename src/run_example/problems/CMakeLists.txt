@@ -1,6 +1,5 @@
 add_library(problems SHARED
         example_problem_single_objective.cpp
-        base_problem.cpp
 )
 target_include_directories(problems PUBLIC include)
 

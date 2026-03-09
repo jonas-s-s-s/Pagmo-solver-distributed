@@ -2,18 +2,25 @@
 #include "distributed_controller.h"
 #include "distributed_island.h"
 #include "distributed_worker.h"
+#include "algorithms/include/dll_problem_wrapper.h"
 #include "islandTest.h"
 #include "lib_loader.h"
 #include "vector_istreambuf.h"
+#include "pagmo/algorithms/gaco.hpp"
 #include "pagmo/algorithms/nsga2.hpp"
+#include "pagmo/problems/dtlz.hpp"
 
 int main(int argc, char* argv[])
 {
     lib_loader<base_problem> ll{"./problems" + portable_dll_extension()};
     ll.open_lib();
-    const auto bp = ll.get_instance();
+    std::shared_ptr<base_problem> bp = ll.get_instance();
+    dll_problem_wrapper dpw{bp, bp->get_lib_file_name()};
 
     std::cout << bp->get_lib_file_name() << std::endl;
+
+    const pagmo::algorithm algo{pagmo::gaco(100)};
+    pagmo::population pop{dpw, 24};
 
     /*
     std::string address = "tcp://localhost:5000";
