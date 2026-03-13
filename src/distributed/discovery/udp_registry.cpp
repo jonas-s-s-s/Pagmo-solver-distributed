@@ -14,8 +14,6 @@ std::shared_ptr<udp_base> udp_registry::construct_udp(const std::string& name)
         return _lib_loaders.at(name).get_instance();
     }
 
-    // TODO: Check if the lib exists in local cache, if yes, load it
-
     // If lib is not loaded, try to get it via provider
     if (_udp_provider)
     {
@@ -61,7 +59,6 @@ void udp_registry::_save_lib_into_fs(const std::string& libName, const std::vect
 void udp_registry::_load_lib(const std::string& libName)
 {
     const std::string path = std::string(LIB_CACHE) + libName + portable_dll_extension();
-
     _lib_loaders.insert({libName, lib_loader<udp_base>{path}});
     _lib_loaders.at(libName).open_lib();
 }

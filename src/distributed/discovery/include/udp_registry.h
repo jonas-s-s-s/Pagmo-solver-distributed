@@ -17,6 +17,7 @@
 class udp_registry
 {
 public:
+    // TODO: Change?
     static constexpr std::string_view LIB_CACHE = "./lib_cache/";
 
     /**
@@ -28,19 +29,9 @@ public:
         return instance;
     }
 
-    /**
-     * Constructs a UDP, which is contained within some dynamic library
-     * @param name Name of the UDP's library
-     * @return Shared ptr pointing to a newly constructed instance of the UDP
-     */
     std::shared_ptr<udp_base> construct_udp(const std::string& name);
 
     using udp_provider = std::function<std::optional<std::vector<std::byte>>(const std::string&)>;
-
-    /**
-     * Registers a function which will be called if the udp_registry can't find a DLL locally
-     * @param providerFunc Function that returns the DLL file as byte vector, or an empty std::optional if it doesn't exist
-     */
     void register_udp_provider(const udp_provider& providerFunc);
 
 private:
