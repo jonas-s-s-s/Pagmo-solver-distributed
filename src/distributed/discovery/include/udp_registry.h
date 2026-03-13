@@ -1,6 +1,7 @@
 #pragma once
 #include <functional>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 #include <unordered_map>
@@ -28,14 +29,14 @@ public:
         return instance;
     }
 
-    //TODO: Mutex, thread safety
-
     std::shared_ptr<udp_base> construct_udp(const std::string& name);
 
     using udp_provider = std::function<std::optional<std::vector<std::byte>>(const std::string&)>;
     void register_udp_provider(const udp_provider& providerFunc);
 
 private:
+    std::mutex _registryMutex{};
+
     // Map which stores lib_loader objects of libraries which we have already loaded into memory
     std::unordered_map<std::string, lib_loader<udp_base>> _lib_loaders{};
 

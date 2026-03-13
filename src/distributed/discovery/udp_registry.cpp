@@ -5,6 +5,9 @@
 
 std::shared_ptr<udp_base> udp_registry::construct_udp(const std::string& name)
 {
+    // Anything calling this needs to first acquire the mutex, without this there could be a race condition on if (_udp_provider)
+    std::scoped_lock lock(_registryMutex);
+
     // If this lib is already loaded, simply construct a new object
     if (_lib_loaders.contains(name))
     {
@@ -30,6 +33,8 @@ std::shared_ptr<udp_base> udp_registry::construct_udp(const std::string& name)
 
 void udp_registry::register_udp_provider(const udp_provider& providerFunc)
 {
+    // This will prevent provider from changing if any thread is executing inside construct_udp()
+    std::scoped_lock lock(_registryMutex);
     _udp_provider = providerFunc;
 }
 
