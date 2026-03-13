@@ -1,5 +1,13 @@
 #include "udp_dll_wrapper.h"
 
+#include "udp_registry.h"
+
+void udp_dll_wrapper::_initialize_udp()
+{
+    // construct_udp throws std::runtime_error if not found
+    _problemPtr = udp_registry::get().construct_udp(_libFileName);
+}
+
 pagmo::vector_double udp_dll_wrapper::fitness(const pagmo::vector_double& dv) const
 {
     return _problemPtr->fitness(dv);
@@ -20,10 +28,9 @@ pagmo::vector_double::size_type udp_dll_wrapper::get_nic() const
     return _problemPtr->get_nic();
 }
 
-udp_dll_wrapper::udp_dll_wrapper(const std::shared_ptr<udp_base>& problem_ptr,
-    const std::string& lib_file_name): _problemPtr(problem_ptr),
-                                       _libFileName(lib_file_name)
+udp_dll_wrapper::udp_dll_wrapper(const std::string& lib_file_name) : _libFileName(lib_file_name)
 {
+    _initialize_udp();
 }
 
 std::string udp_dll_wrapper::get_lib_file_name() const

@@ -2,6 +2,7 @@
 #include "vector_streambuf.h"
 #include "zmq.hpp"
 #include <pagmo/s11n.hpp>
+#include <boost/serialization/optional.hpp>
 
 namespace distributed
 {

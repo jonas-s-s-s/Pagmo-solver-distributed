@@ -2,6 +2,7 @@
 #include <thread>
 #include <unordered_set>
 
+#include "dll_locator.h"
 #include "router_socket.h"
 #include "zmq.hpp"
 #include "zmq_addon.hpp"
@@ -23,12 +24,14 @@ class distributed_controller
     std::unordered_map<std::string, std::string> _workAllocationMap{};
 
     void _add_free_worker(const std::string& workerId);
-    void _handleWorkersSocketMsg();
-    void _handleIslandsSocketMsg();
+    void _handle_Workers_Socket_Msg();
+    void _handle_Islands_Socket_Msg();
 
     void _allocate_worker_to_island(const std::string& islandId, const std::vector<std::byte>& workData);
     std::tuple<std::string, std::vector<std::byte>> _pop_waiting_island();
 
+    // Helper class for finding and reading local DLL files (containing UDPs)
+    dll_locator _dll_locator{};
 public:
     explicit distributed_controller(const std::string& controllerAddress);
 

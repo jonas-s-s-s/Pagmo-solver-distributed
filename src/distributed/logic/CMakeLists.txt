@@ -2,6 +2,6 @@ add_library(distributed_logic distributed_island.cpp distributed_controller.cpp 
 
 target_include_directories(distributed_logic PUBLIC include)
 
-target_link_libraries(distributed_logic distributed_messages distributed_sockets distributed_utils)
+target_link_libraries(distributed_logic distributed_messages distributed_sockets distributed_utils distributed_dynamic)
 target_link_libraries(distributed_logic cppzmq libzmq)
 target_link_libraries(distributed_logic pagmo)
