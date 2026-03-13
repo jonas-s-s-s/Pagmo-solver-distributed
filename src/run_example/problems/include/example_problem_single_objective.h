@@ -1,12 +1,10 @@
 #pragma once
-#include "base_problem.h"
+#include "udp_base.h"
 #include "pagmo/types.hpp"
 #include "dll_visibility.h"
 #include <pagmo/s11n.hpp>
-#include <pagmo/detail/s11n_wrappers.hpp>
-#include <boost/serialization/extended_type_info_no_rtti.hpp>
 
-class DLL_PUBLIC example_problem_single_objective : public base_problem
+class DLL_PUBLIC example_problem_single_objective : public udp_base
 {
 public:
     // Implementation of the objective function.

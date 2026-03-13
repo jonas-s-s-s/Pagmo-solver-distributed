@@ -1,19 +1,34 @@
-#include "algorithms/include/base_problem.h"
-#include "distributed_controller.h"
-#include "distributed_island.h"
-#include "distributed_worker.h"
-#include "algorithms/include/dll_problem_wrapper.h"
-#include "islandTest.h"
-#include "lib_loader.h"
-#include "vector_istreambuf.h"
-#include "pagmo/algorithms/gaco.hpp"
-#include "pagmo/algorithms/nsga2.hpp"
-#include "pagmo/problems/dtlz.hpp"
-#include <boost/serialization/shared_ptr.hpp>
+#include <fstream>
 
+#include "distributed_controller.h"
+#include "distributed_worker.h"
+#include "islandTest.h"
+#include "udp_registry.h"
+
+std::optional<std::vector<std::byte>> lib_provider(const std::string& lib_name)
+{
+    // TODO: remove ".dll"
+    try
+    {
+        std::basic_ifstream<std::byte> fStream{lib_name + ".dll", std::ios::binary};
+        std::vector<std::byte> file_content{std::istreambuf_iterator(fStream), {}};
+        return file_content;
+    } catch (...)
+    {
+        return std::nullopt;
+    }
+}
 
 int main(int argc, char* argv[])
 {
+    udp_registry::get().register_udp_provider(lib_provider);
+
+    const auto udp = udp_registry::get().construct_udp("problems");
+
+    std::cout << udp->get_lib_file_name() << std::endl;
+
+
+    /*
     std::string address = "tcp://localhost:5000";
     std::thread t;
 
@@ -37,6 +52,7 @@ int main(int argc, char* argv[])
         }
     }
     t.join();
+    */
 
     return 0;
 }

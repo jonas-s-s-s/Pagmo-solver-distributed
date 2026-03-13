@@ -1,10 +1,8 @@
 #pragma once
 #include <string>
-
 #include "pagmo/types.hpp"
-#include <pagmo/s11n.hpp>
 
-class base_problem
+class udp_base
 {
 public:
     // Objective function
@@ -22,5 +20,5 @@ public:
     // Name of the library, used to identify it in the filesystem
     virtual std::string get_lib_file_name() = 0;
 
-    virtual ~base_problem() = default;
+    virtual ~udp_base() = default;
 };

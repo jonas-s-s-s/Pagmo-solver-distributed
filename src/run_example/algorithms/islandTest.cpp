@@ -1,9 +1,9 @@
 #include "islandTest.h"
 
-#include "include/base_problem.h"
+#include "udp_base.h"
 #include "distributed_controller.h"
 #include "distributed_island.h"
-#include "dll_problem_wrapper.h"
+#include "udp_dll_wrapper.h"
 #include "lib_loader.h"
 #include "pagmo/algorithms/pso.hpp"
 #include "pagmo/algorithm.hpp"
@@ -16,7 +16,6 @@
 #include "pagmo/algorithms/moead_gen.hpp"
 #include "pagmo/algorithms/nsga2.hpp"
 #include "pagmo/algorithms/nspso.hpp"
-#include "pagmo/algorithms/xnes.hpp"
 #include "pagmo/problems/cec2014.hpp"
 #include "pagmo/problems/zdt.hpp"
 #include "pagmo/utils/multi_objective.hpp"
@@ -123,10 +122,10 @@ void islandTest::run_cec2014(const std::vector<pagmo::algorithm>& algorithm)
 
 void islandTest::run_dll_problem(const std::vector<pagmo::algorithm>& algorithm)
 {
-    lib_loader<base_problem> loader{"./problems" + portable_dll_extension()};
+    lib_loader<udp_base> loader{"./problems" + portable_dll_extension()};
     loader.open_lib();
-    const std::shared_ptr<base_problem> baseProb = loader.get_instance();
-    dll_problem_wrapper probWrapper{baseProb, baseProb->get_lib_file_name()};
+    const std::shared_ptr<udp_base> baseProb = loader.get_instance();
+    udp_dll_wrapper probWrapper{baseProb, baseProb->get_lib_file_name()};
 
     const pagmo::problem prob{probWrapper};
     run_algorithm_on_problem(prob, algorithm);
