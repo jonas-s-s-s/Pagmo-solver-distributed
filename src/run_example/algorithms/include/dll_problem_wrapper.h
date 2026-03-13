@@ -1,7 +1,7 @@
 #pragma once
 #include <memory>
 
-#include "../../problems/include/base_problem.h"
+#include "base_problem.h"
 #include "pagmo/types.hpp"
 #include <pagmo/s11n.hpp>
 #include <pagmo/detail/s11n_wrappers.hpp>
@@ -39,7 +39,7 @@ private:
     template <typename Archive>
     void save(Archive& ar, unsigned) const
     {
-        pagmo::detail::to_archive(ar, _problemPtr, _libFileName);
+        pagmo::detail::to_archive(ar, _libFileName);
     }
 
     template <typename Archive>
@@ -47,7 +47,7 @@ private:
     {
         try
         {
-            pagmo::detail::from_archive(ar, _problemPtr, _libFileName);
+            pagmo::detail::from_archive(ar, _libFileName);
         }
         catch (...)
         {
