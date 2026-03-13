@@ -66,7 +66,3 @@ extern "C" DLL_PUBLIC void deleter(example_problem_single_objective* ptr);
 
 
 BOOST_CLASS_EXPORT_KEY(example_problem_single_objective)
-BOOST_CLASS_TYPE_INFO(
-    example_problem_single_objective,
-    boost::serialization::extended_type_info_no_rtti<example_problem_single_objective>
-)

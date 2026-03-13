@@ -23,10 +23,6 @@ int main(int argc, char* argv[])
 
     std::cout << typeid(*bp).name() << std::endl;
 
-    //boost::serialization::extended_type_info::find("");
-
-    const pagmo::algorithm algo{pagmo::gaco(100)};
-    pagmo::population pop{dpw, 24};
 
     std::vector<std::byte> serialized;
     vector_streambuf buf(serialized);
