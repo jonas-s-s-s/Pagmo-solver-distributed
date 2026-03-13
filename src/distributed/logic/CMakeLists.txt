@@ -1,4 +1,4 @@
-add_library(distributed_logic distributed_island.cpp distributed_controller.cpp distributed_worker.cpp)
+add_library(distributed_logic distributed_island.cpp distributed_controller.cpp distributed_worker.cpp dll_locator.cpp)
 
 target_include_directories(distributed_logic PUBLIC include)
 
