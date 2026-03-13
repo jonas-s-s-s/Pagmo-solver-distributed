@@ -47,15 +47,7 @@ private:
     template <typename Archive>
     void load(Archive& ar, unsigned)
     {
-        try
-        {
-            pagmo::detail::from_archive(ar, algo, pop);
-        }
-        catch (...)
-        {
-            *this = work_container{};
-            throw;
-        }
+        pagmo::detail::from_archive(ar, algo, pop);
     }
 
     BOOST_SERIALIZATION_SPLIT_MEMBER()
