@@ -6,7 +6,6 @@
 #include "zmq.hpp"
 #include "MsgType.h"
 #include "pair_socket.h"
-#include "router_socket.h"
 #include "zmq_addon.hpp"
 #include "pagmo/archipelago.hpp"
 #include "pagmo/utils/constrained.hpp"
@@ -24,16 +23,15 @@ class distributed_worker
 
     // Work-related code should run on this thread, so we don't block the client message loop
     std::thread _workerThread;
-    // Cannot use pair_socket here, because we also need udp_registry's handler to send messages to socket too
-    distributed::router_socket _threadSocket;
+    distributed::pair_socket _threadSocket;
 
     // Allows this network client to run in the background (function run_client)
     std::thread _clientThread;
 
     void _start_worker_thread(pagmo::algorithm& algo, pagmo::population& pop);
 
-    void _handle_Worker_Socket_Msg();
-    void _handle_Thread_Socket_Msg();
+    void _handleWorkerSocketMsg();
+    void _handleThreadSocketMsg();
 
     /**
      * Spawns a new thread and then simply calls algo.evolve(pop), this causes
@@ -100,11 +98,4 @@ public:
     void run_client();
 
     ~distributed_worker();
-
-     /**
-     * This function exists so udp_registry can call it and get a DLL file from the controller
-     * @param lib_name Name of the DLL
-     * @return DLL file as vector of bytes, or empty optional if not found
-     */
-    std::optional<std::vector<std::byte>> get_dll_from_controller(const std::string& lib_name);
 };

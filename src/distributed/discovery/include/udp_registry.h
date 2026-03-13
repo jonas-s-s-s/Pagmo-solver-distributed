@@ -17,6 +17,7 @@
 class udp_registry
 {
 public:
+    static constexpr std::string_view LIB_CACHE = "./lib_cache/";
 
     /**
      * Returns a static instance of this object
@@ -42,12 +43,8 @@ public:
      */
     void register_udp_provider(const udp_provider& providerFunc);
 
-    void set_lib_cache(const std::string& directory);
-
 private:
     std::mutex _registryMutex{};
-
-    std::string _lib_cache = "./lib_cache/";
 
     // Map which stores lib_loader objects of libraries which we have already loaded into memory
     std::unordered_map<std::string, lib_loader<udp_base>> _lib_loaders{};
@@ -58,7 +55,6 @@ private:
     void _save_lib_into_fs(const std::string& libName, const std::vector<std::byte>& libFile);
 
     void _load_lib(const std::string& libName);
-
 
     udp_registry() = default;
 

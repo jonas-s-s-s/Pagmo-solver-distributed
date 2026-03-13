@@ -18,9 +18,7 @@ std::optional<std::vector<std::byte>> dll_locator::get_dll(const std::string& li
         return std::nullopt;
     }
 
-    // TODO: Convert this to use std::filesystem path
-    const std::string libPath = (_local_dll_location.empty() ? std::string{"./"} : std::string{_local_dll_location + "/"}) + libName +
-        portable_dll_extension();
+    const std::string libPath = _local_dll_location + "/" + libName + portable_dll_extension();
     if (!std::filesystem::exists(libPath))
     {
         // The library file doesn't exist
@@ -29,7 +27,7 @@ std::optional<std::vector<std::byte>> dll_locator::get_dll(const std::string& li
 
     try
     {
-        std::basic_ifstream<std::byte> fStream{libPath, std::ios::binary};
+        std::basic_ifstream<std::byte> fStream{libName + ".dll", std::ios::binary};
         std::vector<std::byte> fileContent{std::istreambuf_iterator(fStream), {}};
         return fileContent;
     }

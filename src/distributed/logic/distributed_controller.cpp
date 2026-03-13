@@ -2,21 +2,13 @@
 
 #include <iostream>
 
-#include "vector_istreambuf.h"
-
 //#####################################################################################
 //# Handling of socket messages
 //#####################################################################################
 
-void distributed_controller::_handle_Workers_Socket_Msg()
+void distributed_controller::_handleWorkersSocketMsg()
 {
     auto [workerId, type, binary] = _workersSocket.receive();
-
-    // Shared buffer and stream for deserializing
-    vector_istreambuf ibuf(binary);
-    std::istream is(&ibuf);
-    boost::archive::binary_iarchive ia(is);
-
     std::cout << "[" << static_cast<int>(type) << "] from worker" << std::endl;
 
     switch (type)
@@ -45,28 +37,12 @@ void distributed_controller::_handle_Workers_Socket_Msg()
             _add_free_worker(workerId);
         }
         break;
-
-    case MsgType::GET_DLL:
-        {
-            // Deserialize the DLL request so we can get the name of this DLL
-            get_dll_request dll_request{};
-            ia >> dll_request;
-
-            // Pass name of this DLL to the locator and return the output to worker
-            auto file = _dll_locator.get_dll(dll_request.dll_name);
-            _workersSocket.send(workerId,
-                                MsgType::DLL_BINARY,
-                                dll_binary_container{dll_request.dll_name, file, dll_request.sender_id}
-            );
-        }
-        break;
-
     default:
         std::cerr << "WARNING: " << workerId << " sent unhandled message type: " << static_cast<int>(type) << std::endl;
     }
 }
 
-void distributed_controller::_handle_Islands_Socket_Msg()
+void distributed_controller::_handleIslandsSocketMsg()
 {
     auto [islandId, type, binary] = _islandsSocket.receive();
     std::cout << "[" << static_cast<int>(type) << "] from island" << std::endl;
@@ -147,13 +123,13 @@ distributed_controller::distributed_controller(const std::string& controllerAddr
     _poller.add(_workersSocket.get_socket(), zmq::event_flags::pollin,
                 [this](zmq::event_flags e)
                 {
-                    _handle_Workers_Socket_Msg();
+                    _handleWorkersSocketMsg();
                 });
 
     _poller.add(_islandsSocket.get_socket(), zmq::event_flags::pollin,
                 [this](zmq::event_flags e)
                 {
-                    _handle_Islands_Socket_Msg();
+                    _handleIslandsSocketMsg();
                 });
 
     try

@@ -8,13 +8,8 @@
 
 class udp_dll_wrapper
 {
-    std::shared_ptr<udp_base> _problemPtr{};
+    std::shared_ptr<udp_base> _problemPtr;
     std::string _libFileName;
-
-    /**
-     * Attempts to initialize the UDP via udp_registry, if UDP is not found, an exception is thrown
-     */
-    void _initialize_udp();
 
 public:
     pagmo::vector_double fitness(const pagmo::vector_double& dv) const;
@@ -30,7 +25,7 @@ public:
      */
     udp_dll_wrapper() = default;
 
-    explicit udp_dll_wrapper(const std::string& lib_file_name);
+    udp_dll_wrapper(const std::shared_ptr<udp_base>& problem_ptr, const std::string& lib_file_name);
 
     [[nodiscard]] virtual std::string get_lib_file_name() const;
 
@@ -53,7 +48,6 @@ private:
         try
         {
             pagmo::detail::from_archive(ar, _libFileName);
-            _initialize_udp();
         }
         catch (...)
         {

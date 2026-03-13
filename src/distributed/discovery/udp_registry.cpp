@@ -40,19 +40,13 @@ void udp_registry::register_udp_provider(const udp_provider& providerFunc)
     _udp_provider = providerFunc;
 }
 
-void udp_registry::set_lib_cache(const std::string& directory)
-{
-    _lib_cache = directory;
-}
-
 void udp_registry::_save_lib_into_fs(const std::string& libName, const std::vector<std::byte>& libFile)
 {
-    // TODO: Convert this to std::filesystem path
-    const std::string path = _lib_cache + "/" + libName + portable_dll_extension();
+    const std::string path = std::string(LIB_CACHE) + libName + portable_dll_extension();
 
     // We're assuming the parent directory exists
-    if (!std::filesystem::exists(_lib_cache))
-        std::filesystem::create_directory(_lib_cache);
+    if (!std::filesystem::exists(LIB_CACHE))
+        std::filesystem::create_directory(LIB_CACHE);
 
     std::ofstream file(path, std::ios::binary);
     if (!file)
@@ -66,7 +60,7 @@ void udp_registry::_save_lib_into_fs(const std::string& libName, const std::vect
 
 void udp_registry::_load_lib(const std::string& libName)
 {
-    const std::string path = _lib_cache + "/" + libName + portable_dll_extension();
+    const std::string path = std::string(LIB_CACHE) + libName + portable_dll_extension();
 
     _lib_loaders.insert({libName, lib_loader<udp_base>{path}});
     _lib_loaders.at(libName).open_lib();

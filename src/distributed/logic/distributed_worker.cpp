@@ -13,14 +13,9 @@
 //# Handling of socket messages
 //#####################################################################################
 
-void distributed_worker::_handle_Worker_Socket_Msg()
+void distributed_worker::_handleWorkerSocketMsg()
 {
     auto [type, binary] = _workerSocket.receive();
-
-    // Shared buffer and stream for deserializing
-    vector_istreambuf ibuf(binary);
-    std::istream is(&ibuf);
-    boost::archive::binary_iarchive ia(is);
 
     std::cout << "[" << static_cast<int>(type) << "] from controller" << std::endl;
 
@@ -28,54 +23,30 @@ void distributed_worker::_handle_Worker_Socket_Msg()
     {
     case MsgType::ALLOCATE_WORK:
         {
+            vector_istreambuf ibuf(binary);
+            std::istream is(&ibuf);
+            boost::archive::binary_iarchive ia(is);
+
             // Deserialize received data
-            work_container wct{};
-            ia >> wct;
+            work_container work_input{};
+            ia >> work_input;
 
             // TODO: Handle situation if thread is already running
-            _start_worker_thread(wct.algo, wct.pop);
+            _start_worker_thread(work_input.algo, work_input.pop);
         }
         break;
-    case MsgType::DLL_BINARY:
-        // Controller has responded to Worker thread's GET_DLL message.
-        // This means we need to forward this to the worker thread via the thread socket
-        {
-            // TODO: Remove, we can use constant sender ID
-            dll_binary_container dbc{};
-            ia >> dbc;
-
-            _threadSocket.send("worker_dll_handler", MsgType::DLL_BINARY, binary);
-        }
-        break;
-
     default:
         std::cerr << "WARNING: controller sent unhandled message type: " << static_cast<int>(type) << std::endl;
     }
 }
 
-void distributed_worker::_handle_Thread_Socket_Msg()
+void distributed_worker::_handleThreadSocketMsg()
 {
-    auto [senderId, type, binary] = _threadSocket.receive();
+    auto [type, work_output] = _threadSocket.receive();
 
-    switch (type)
-    {
-    case MsgType::WORK_RESULTS:
-        // The standard execution path - worker thread completed work and returned results
-        _workerThread.join();
-        _workerSocket.send(MsgType::WORK_RESULTS, binary);
-        break;
+    _workerThread.join();
 
-    case MsgType::GET_DLL:
-        // Worker thread requests a DLL, which needs to be obtained from the controller.
-        // This happens if the DLL is not available locally via udp_registry.
-        // We thus forward it via workerSocket to controller, so it can process this request and respond with DLL_BINARY.
-        _workerSocket.send(MsgType::GET_DLL, binary);
-        break;
-
-    default:
-        std::cerr << "WARNING: worker thread socket sent unhandled message type: " << static_cast<int>(type) <<
-            std::endl;
-    }
+    _workerSocket.send(MsgType::WORK_RESULTS, work_output);
 }
 
 //#####################################################################################
@@ -88,9 +59,8 @@ void distributed_worker::_single_threaded_worker(pagmo::algorithm& algo, pagmo::
     _workerThread = std::thread(
         [this, algo, pop]()
         {
-            distributed::dealer_socket output{this->_ctx};
-            output.set_routing_id("worker_main");
-            output.connect("ipc://thread_socket");
+            distributed::pair_socket output{this->_ctx};
+            output.connect("inproc://thread_socket");
 
             std::cout << "Running algorithm: " << algo.get_name() << std::endl;
             const pagmo::population new_pop = algo.evolve(pop);
@@ -144,9 +114,8 @@ void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo,
         [this, algo, pop, popSorter]()
         {
             // 1) Set up socket for communicating with the parent thread
-            distributed::dealer_socket output{this->_ctx};
-            output.set_routing_id("worker_main");
-            output.connect("ipc://thread_socket");
+            distributed::pair_socket output{this->_ctx};
+            output.connect("inproc://thread_socket");
 
             // 2) Get island count based on hardware core count
             const unsigned islandCount = _compute_optimal_island_count();
@@ -264,18 +233,18 @@ distributed_worker::distributed_worker(const std::string& controllerAddress, con
     _poller.add(_workerSocket.get_socket(), zmq::event_flags::pollin,
                 [this](zmq::event_flags e)
                 {
-                    _handle_Worker_Socket_Msg();
+                    _handleWorkerSocketMsg();
                 });
 
     // Poller callback - thread socket has message
     _poller.add(_threadSocket.get_socket(), zmq::event_flags::pollin,
                 [this](zmq::event_flags e)
                 {
-                    _handle_Thread_Socket_Msg();
+                    _handleThreadSocketMsg();
                 });
 
     // Thread socket always listens on this address
-    _threadSocket.bind("ipc://thread_socket");
+    _threadSocket.bind("inproc://thread_socket");
 
     // Configure the worker socket so it can communicate with the controller
     _workerId = "worker_" + uuid::v4::UUID::New().String();
@@ -309,34 +278,4 @@ distributed_worker::~distributed_worker()
     {
         _clientThread.join();
     }
-}
-
-std::optional<std::vector<std::byte>> distributed_worker::get_dll_from_controller(const std::string& lib_name)
-{
-    const auto myId = "worker_dll_handler";
-
-    distributed::dealer_socket socket{this->_ctx};
-    socket.set_routing_id(myId);
-    socket.connect("ipc://thread_socket");
-
-    // 1) Send the request
-    socket.send(MsgType::GET_DLL, get_dll_request{lib_name, myId});
-
-    // 2) Block until controller eventually replies with DLL_BINARY
-    std::tuple<MsgType, std::vector<std::byte>> receivedData{};
-    do
-    {
-        receivedData = socket.receive();
-        // TODO: Possibly handle any other Msg Types?
-    }
-    while (std::get<0>(receivedData) != MsgType::DLL_BINARY);
-
-    // 3) Return the file itself
-    vector_istreambuf ibuf((std::get<1>(receivedData)));
-    std::istream is(&ibuf);
-    boost::archive::binary_iarchive ia(is);
-    dll_binary_container dbc{};
-    ia >> dbc;
-
-    return dbc.dll_file;
 }
