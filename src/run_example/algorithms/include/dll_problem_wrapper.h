@@ -1,14 +1,14 @@
 #pragma once
 #include <memory>
 
-#include "udp_base.h"
+#include "base_problem.h"
 #include "pagmo/types.hpp"
 #include <pagmo/s11n.hpp>
 #include <pagmo/detail/s11n_wrappers.hpp>
 
-class udp_dll_wrapper
+class dll_problem_wrapper
 {
-    std::shared_ptr<udp_base> _problemPtr;
+    std::shared_ptr<base_problem> _problemPtr;
     std::string _libFileName;
 
 public:
@@ -23,9 +23,9 @@ public:
     /**
      * This constructor needs to exist or this class won't be recognized as UDP by Pagmo
      */
-    udp_dll_wrapper() = default;
+    dll_problem_wrapper() = default;
 
-    udp_dll_wrapper(const std::shared_ptr<udp_base>& problem_ptr, const std::string& lib_file_name);
+    dll_problem_wrapper(const std::shared_ptr<base_problem>& problem_ptr, const std::string& lib_file_name);
 
     [[nodiscard]] virtual std::string get_lib_file_name() const;
 
@@ -51,7 +51,7 @@ private:
         }
         catch (...)
         {
-            *this = udp_dll_wrapper{};
+            *this = dll_problem_wrapper{};
             throw;
         }
     }

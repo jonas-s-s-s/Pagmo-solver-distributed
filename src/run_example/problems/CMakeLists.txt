@@ -3,7 +3,7 @@ add_library(problems SHARED
 )
 target_include_directories(problems PUBLIC include)
 
-target_link_libraries(problems PUBLIC pagmo island_test distributed_discovery)
+target_link_libraries(problems PUBLIC pagmo island_test)
 
 # This ensures that the DLL will be in the same directory as main.exe
 set_target_properties(problems

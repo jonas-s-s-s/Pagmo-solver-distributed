@@ -1,5 +1,0 @@
-add_library(distributed_discovery udp_registry.cpp udp_dll_wrapper.cpp)
-
-target_include_directories(distributed_discovery PUBLIC include)
-
-target_link_libraries(distributed_discovery distributed_dynamic distributed_utils pagmo)
