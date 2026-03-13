@@ -39,7 +39,7 @@ private:
     template <typename Archive>
     void save(Archive& ar, unsigned) const
     {
-        pagmo::detail::to_archive(ar, _problemPtr, _libFileName);
+        pagmo::detail::to_archive(ar, _libFileName);
     }
 
     template <typename Archive>
@@ -47,7 +47,7 @@ private:
     {
         try
         {
-            pagmo::detail::from_archive(ar, _problemPtr, _libFileName);
+            pagmo::detail::from_archive(ar, _libFileName);
         }
         catch (...)
         {

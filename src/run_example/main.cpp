@@ -14,29 +14,6 @@
 
 int main(int argc, char* argv[])
 {
-    lib_loader<base_problem> ll{"./problems" + portable_dll_extension()};
-    ll.open_lib();
-    std::shared_ptr<base_problem> bp = ll.get_instance();
-    dll_problem_wrapper dpw{bp, bp->get_lib_file_name()};
-
-    std::cout << bp->get_lib_file_name() << std::endl;
-
-    std::cout << typeid(*bp).name() << std::endl;
-
-    //boost::serialization::extended_type_info::find("");
-
-    const pagmo::algorithm algo{pagmo::gaco(100)};
-    pagmo::population pop{dpw, 24};
-
-    std::vector<std::byte> serialized;
-    vector_streambuf buf(serialized);
-    std::ostream os(&buf);
-
-    boost::archive::binary_oarchive oa(os);
-    oa << dpw;
-    os.flush();
-
-    /*
     std::string address = "tcp://localhost:5000";
     std::thread t;
 
@@ -59,13 +36,7 @@ int main(int argc, char* argv[])
             worker.client_loop();
         }
     }
-
-
     t.join();
-    */
-
-    // ZDT test suite is used in the NSGA II paper as well
-    //islandTest::run_nsga2(islandTest::run_zdt);
 
     return 0;
 }
