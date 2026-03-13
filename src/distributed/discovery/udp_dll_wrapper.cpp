@@ -1,7 +1,7 @@
 #include "udp_dll_wrapper.h"
 
 #include "udp_registry.h"
-
+#include <pagmo/problem.hpp>
 void udp_dll_wrapper::_initialize_udp()
 {
     // construct_udp throws std::runtime_error if not found
@@ -37,3 +37,8 @@ std::string udp_dll_wrapper::get_lib_file_name() const
 {
     return _libFileName;
 }
+
+BOOST_CLASS_EXPORT(udp_dll_wrapper)
+
+// Export the concrete instantiation
+BOOST_CLASS_EXPORT(pagmo::detail::prob_inner<udp_dll_wrapper>)
