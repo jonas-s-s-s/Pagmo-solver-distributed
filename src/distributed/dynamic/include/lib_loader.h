@@ -17,22 +17,22 @@ class lib_loader
 private:
     HANDLE_TYPE _handle;
     std::string _pathToLib;
-    std::string _allocClassSymbol;
-    std::string _deleteClassSymbol;
-    std::string _runAfterLoadClassSymbol;
+    std::string _allocSymbol;
+    std::string _deleteSymbol;
+    std::string _runAfterLoadSymbol;
 
     bool _afterLoadExecuted = false;
 
 public:
     explicit lib_loader(std::string pathToLib,
-                        std::string allocClassSymbol = "allocator",
-                        std::string deleteClassSymbol = "deleter",
-                        std::string _runAfterLoadClassSymbol = "run_after_load") :
+                        std::string allocSymbol = "allocator",
+                        std::string deleteSymbol = "deleter",
+                        std::string _runAfterLoadSymbol = "run_after_load") :
         _handle(nullptr),
         _pathToLib(std::move(pathToLib)),
-        _allocClassSymbol(std::move(allocClassSymbol)),
-        _deleteClassSymbol(std::move(deleteClassSymbol)),
-        _runAfterLoadClassSymbol(std::move(_runAfterLoadClassSymbol))
+        _allocSymbol(std::move(allocSymbol)),
+        _deleteSymbol(std::move(deleteSymbol)),
+        _runAfterLoadSymbol(std::move(_runAfterLoadSymbol))
     {
     }
 
@@ -58,19 +58,21 @@ public:
      */
     std::shared_ptr<T> get_instance()
     {
-        using allocClass = T *(*)();
-        using deleteClass = void (*)(T*);
+        using allocT = T *(*)();
+        using deleteT = void (*)(T*);
+        using runAfterLoadT = void (*)();
 
-        auto allocFunc = reinterpret_cast<allocClass>(portable_dlsym(_handle, _allocClassSymbol.c_str()));
-        auto deleteFunc = reinterpret_cast<deleteClass>(portable_dlsym(_handle, _deleteClassSymbol.c_str()));
+        auto allocFunc = reinterpret_cast<allocT>(portable_dlsym(_handle, _allocSymbol.c_str()));
+        auto deleteFunc = reinterpret_cast<deleteT>(portable_dlsym(_handle, _deleteSymbol.c_str()));
 
         // If run_after_load exists, run it (only once)
         if (!_afterLoadExecuted)
         {
             _afterLoadExecuted = true;
 
-            auto runAfterLoadFunc = reinterpret_cast<allocClass>(portable_dlsym(
-                _handle, _runAfterLoadClassSymbol.c_str()));
+            auto runAfterLoadFunc = reinterpret_cast<runAfterLoadT>(
+                portable_dlsym(_handle, _runAfterLoadSymbol.c_str())
+            );
             if (runAfterLoadFunc)
             {
                 runAfterLoadFunc();
