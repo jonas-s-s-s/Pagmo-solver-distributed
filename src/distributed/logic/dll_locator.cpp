@@ -12,6 +12,8 @@ dll_locator::dll_locator(const std::string& local_dll_location) : _local_dll_loc
 
 std::optional<std::vector<std::byte>> dll_locator::get_dll(const std::string& libName) const
 {
+    std::cout << "dll_locator locating lib file: " << libName << std::endl;
+
     if (!_local_dll_location.empty() && !std::filesystem::exists(_local_dll_location))
     {
         // The file's parent directory doesn't exist

@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include <memory>
 
 #include "udp_base.h"
@@ -8,7 +9,12 @@
 
 class udp_dll_wrapper
 {
-    std::shared_ptr<udp_base> _problemPtr{};
+    // This shared_ptr is COPIED when the object is copy constructed.
+    // We assume that udp_base is thread-safe, because it has no internal state,
+    // so it doesn't matter that multiple threads share the same instance.
+    // As long as we don't have UDPs with internal state this won't be an issue.
+    std::shared_ptr<udp_base> _udpPtr{};
+
     std::string _libFileName;
 
     /**
@@ -45,6 +51,7 @@ private:
     void save(Archive& ar, unsigned) const
     {
         pagmo::detail::to_archive(ar, _libFileName);
+        std::cout << "udp_dll_wrapper successfully saved" << std::endl;
     }
 
     template <typename Archive>
@@ -53,7 +60,9 @@ private:
         try
         {
             pagmo::detail::from_archive(ar, _libFileName);
+            // When deserializing we load the UDP via udp_registry
             _initialize_udp();
+            std::cout << "udp_dll_wrapper successfully loaded" << std::endl;
         }
         catch (...)
         {

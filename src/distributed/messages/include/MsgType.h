@@ -47,15 +47,7 @@ private:
     template <typename Archive>
     void load(Archive& ar, unsigned)
     {
-        try
-        {
-            pagmo::detail::from_archive(ar, algo, pop);
-        }
-        catch (...)
-        {
-            *this = work_container{};
-            throw;
-        }
+        pagmo::detail::from_archive(ar, algo, pop);
     }
 
     BOOST_SERIALIZATION_SPLIT_MEMBER()
@@ -87,13 +79,13 @@ private:
     template <typename Archive>
     void save(Archive& ar, unsigned) const
     {
-        pagmo::detail::to_archive(ar, dll_name,sender_id);
+        pagmo::detail::to_archive(ar, dll_name, sender_id);
     }
 
     template <typename Archive>
     void load(Archive& ar, unsigned)
     {
-        pagmo::detail::from_archive(ar, dll_name,sender_id);
+        pagmo::detail::from_archive(ar, dll_name, sender_id);
     }
 
     BOOST_SERIALIZATION_SPLIT_MEMBER()
@@ -108,7 +100,7 @@ public:
     std::string sender_id;
 
     dll_binary_container(const std::string& dll_name, const std::optional<std::vector<std::byte>>& dll_file,
-        const std::string& sender_id)
+                         const std::string& sender_id)
         : dll_name(dll_name),
           dll_file(dll_file),
           sender_id(sender_id)

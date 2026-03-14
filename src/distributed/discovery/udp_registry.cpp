@@ -2,9 +2,12 @@
 
 #include <filesystem>
 #include <fstream>
+#include <iostream>
 
 std::shared_ptr<udp_base> udp_registry::construct_udp(const std::string& name)
 {
+    std::cout << "udp_registry constructing an instance of: " << name << std::endl;
+
     // Anything calling this needs to first acquire the mutex, without this there could be a race condition on if (_udp_provider)
     std::scoped_lock lock(_registryMutex);
 
@@ -35,6 +38,8 @@ std::shared_ptr<udp_base> udp_registry::construct_udp(const std::string& name)
 
 void udp_registry::register_udp_provider(const udp_provider& providerFunc)
 {
+    std::cout << "udp_provider has been registered in udp_registry" << std::endl;
+
     // This will prevent provider from changing if any thread is executing inside construct_udp()
     std::scoped_lock lock(_registryMutex);
     _udp_provider = providerFunc;
@@ -42,11 +47,15 @@ void udp_registry::register_udp_provider(const udp_provider& providerFunc)
 
 void udp_registry::set_lib_cache(const std::string& directory)
 {
+    std::cout << "udp_registry cache has been set to:" << directory << std::endl;
+
     _lib_cache = directory;
 }
 
 void udp_registry::_save_lib_into_fs(const std::string& libName, const std::vector<std::byte>& libFile)
 {
+    std::cout << "udp_registry saving lib file: " << libName << std::endl;
+
     // TODO: Convert this to std::filesystem path
     const std::string path = _lib_cache + "/" + libName + portable_dll_extension();
 
@@ -66,6 +75,8 @@ void udp_registry::_save_lib_into_fs(const std::string& libName, const std::vect
 
 void udp_registry::_load_lib(const std::string& libName)
 {
+    std::cout << "udp_registry loading lib file: " << libName << std::endl;
+
     const std::string path = _lib_cache + "/" + libName + portable_dll_extension();
 
     _lib_loaders.insert({libName, lib_loader<udp_base>{path}});
