@@ -15,15 +15,7 @@ int main(int argc, char* argv[])
 
     if (argc >= 2 && argv[1] == std::string("-run-controller"))
     {
-        // TODO: This locator is possibly duplicated, we already define a locator inside of controller
-        dll_locator locator;
         udp_registry::get().set_lib_cache("controller_cache");
-        udp_registry::get().register_udp_provider(
-            [&locator](const std::string& libName)
-            {
-                return locator.get_dll(libName);
-            }
-        );
 
         distributed_controller controller{address};
         controller.run_server();

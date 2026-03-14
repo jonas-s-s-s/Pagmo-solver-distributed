@@ -17,9 +17,14 @@ std::shared_ptr<udp_base> udp_registry::construct_udp(const std::string& name)
         return _lib_loaders.at(name).get_instance();
     }
 
-    // TODO: Check if the lib exists in local cache, if yes, load it
+    // Check if the lib exists in local cache, if yes, load it and return instance
+    if (_is_lib_in_cache(name))
+    {
+        _load_lib(name);
+        return _lib_loaders.at(name).get_instance();
+    }
 
-    // If lib is not loaded, try to get it via provider
+    // If lib is not loaded or present in cache, try to get it via provider
     if (_udp_provider)
     {
         const auto libFile = _udp_provider(name);
@@ -82,3 +87,50 @@ void udp_registry::_load_lib(const std::string& libName)
     _lib_loaders.insert({libName, lib_loader<udp_base>{path}});
     _lib_loaders.at(libName).open_lib();
 }
+
+bool udp_registry::_is_lib_in_cache(const std::string& libName) const
+{
+    // TODO: Convert this to std::filesystem path
+    const std::string path = _lib_cache + "/" + libName + portable_dll_extension();
+
+    return std::filesystem::exists(path);
+}
+
+std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::string& libName) const
+{
+    // TODO: Add a cache for files to prevent repeated loading from the filesystem?
+    std::cout << "get_lib_as_file: " << libName << std::endl;
+
+    if (!_is_lib_in_cache(libName))
+    {
+        // If the file doesn't exist locally, we can try using udp provider
+        if (_udp_provider)
+        {
+            return _udp_provider(libName);
+        }
+        return std::nullopt;
+    }
+
+    // TODO: Convert this to std::filesystem path
+    const std::string libPath = _lib_cache + "/" + libName + portable_dll_extension();
+    try
+    {
+        std::basic_ifstream<std::byte> fStream{libPath, std::ios::binary};
+        std::vector<std::byte> fileContent{std::istreambuf_iterator(fStream), {}};
+        return fileContent;
+    }
+    catch (std::exception e)
+    {
+        std::cerr << "Warning: error when attempting to load file: " << libPath << "Err msg:" << e.what() <<
+            " Proceeding as if it doesn't exist." << std::endl;
+        return std::nullopt;
+    }
+    catch (...)
+    {
+        std::cerr << "Warning: unknown error when attempting to load file: " << libPath <<
+            " Proceeding as if it doesn't exist." << std::endl;
+        return std::nullopt;
+    }
+
+}
+

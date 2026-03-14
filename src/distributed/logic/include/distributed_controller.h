@@ -2,7 +2,6 @@
 #include <thread>
 #include <unordered_set>
 
-#include "dll_locator.h"
 #include "router_socket.h"
 #include "zmq.hpp"
 #include "zmq_addon.hpp"
@@ -30,8 +29,6 @@ class distributed_controller
     void _allocate_worker_to_island(const std::string& islandId, const std::vector<std::byte>& workData);
     std::tuple<std::string, std::vector<std::byte>> _pop_waiting_island();
 
-    // Helper class for finding and reading local DLL files (containing UDPs)
-    dll_locator _dll_locator{};
 public:
     explicit distributed_controller(const std::string& controllerAddress);
 
