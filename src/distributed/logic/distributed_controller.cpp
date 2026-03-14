@@ -4,6 +4,7 @@
 
 #include "vector_deserialize.h"
 #include "vector_istreambuf.h"
+#include "../discovery/include/udp_registry.h"
 
 //#####################################################################################
 //# Handling of socket messages
@@ -47,8 +48,8 @@ void distributed_controller::_handle_Workers_Socket_Msg()
             // Deserialize the DLL request so we can get the name of this DLL
             const auto dll_request = vector_deserialize<get_dll_request>(binary);
 
-            // Pass name of this DLL to the locator and return the output to worker
-            const auto file = _dll_locator.get_dll(dll_request.dll_name);
+            // Get the DLL file via udp_registry (returns std::optional, Worker's udp_registry will throw if it's nullopt)
+            const auto file = udp_registry::get().get_lib_as_file(dll_request.dll_name);
             _workersSocket.send(workerId,
                                 MsgType::DLL_BINARY,
                                 dll_binary_container{dll_request.dll_name, file, dll_request.sender_id}

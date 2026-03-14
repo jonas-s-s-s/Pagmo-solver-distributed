@@ -44,6 +44,8 @@ public:
 
     void set_lib_cache(const std::string& directory);
 
+    std::optional<std::vector<std::byte>> get_lib_as_file(const std::string& libName) const;
+
 private:
     std::mutex _registryMutex{};
 
@@ -59,6 +61,7 @@ private:
 
     void _load_lib(const std::string& libName);
 
+    bool _is_lib_in_cache(const std::string& libName) const;
 
     udp_registry() = default;
 
