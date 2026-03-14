@@ -30,7 +30,7 @@ class distributed_worker
     // Allows this network client to run in the background (function run_client)
     std::thread _clientThread;
 
-    void _start_worker_thread(pagmo::algorithm& algo, pagmo::population& pop);
+    void _start_worker_thread(const std::vector<std::byte>& workData);
 
     void _handle_Worker_Socket_Msg();
     void _handle_Thread_Socket_Msg();

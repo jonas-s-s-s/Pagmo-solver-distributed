@@ -1,11 +1,9 @@
 #include "distributed_worker.h"
 
 #include <iostream>
-#include <random>
 
 #include "UUID.h"
 #include "vector_deserialize.h"
-#include "vector_istreambuf.h"
 #include "pagmo/archipelago.hpp"
 #include "pagmo/islands/thread_island.hpp"
 #include "pagmo/utils/multi_objective.hpp"
@@ -24,11 +22,9 @@ void distributed_worker::_handle_Worker_Socket_Msg()
     {
     case MsgType::ALLOCATE_WORK:
         {
-            // Deserialize received data
-            auto wct = vector_deserialize<work_container>(binary);
-
-            // TODO: Handle situation if thread is already running
-            _start_worker_thread(wct.algo, wct.pop);
+            // Do not deserialize here, because it can possibly create an instance of udp_dll_wrapper,
+            // which blocks the thread by calling socket.receive in get_dll_from_controller().
+            _start_worker_thread(binary);
         }
         break;
     case MsgType::DLL_BINARY:
@@ -37,7 +33,6 @@ void distributed_worker::_handle_Worker_Socket_Msg()
         {
             // TODO: Remove, we can use constant sender ID
             auto dbc = vector_deserialize<dll_binary_container>(binary);
-
             _threadSocket.send("worker_dll_handler", MsgType::DLL_BINARY, binary);
         }
         break;
@@ -79,20 +74,15 @@ void distributed_worker::_handle_Thread_Socket_Msg()
 void distributed_worker::_single_threaded_worker(pagmo::algorithm& algo, pagmo::population& pop)
 {
     std::cout << "Single-threaded worker started... " << std::endl;
-    _workerThread = std::thread(
-        [this, algo, pop]()
-        {
-            distributed::dealer_socket output{this->_ctx};
-            output.set_routing_id("worker_main");
-            output.connect("ipc://thread_socket");
 
-            std::cout << "Running algorithm: " << algo.get_name() << std::endl;
-            const pagmo::population new_pop = algo.evolve(pop);
+    distributed::dealer_socket output{this->_ctx};
+    output.set_routing_id("worker_main");
+    output.connect("ipc://thread_socket");
 
-            output.send(MsgType::WORK_RESULTS, work_container{algo, new_pop});
+    std::cout << "Running algorithm: " << algo.get_name() << std::endl;
+    const pagmo::population new_pop = algo.evolve(pop);
 
-            std::cout << "Worker thread finished. " << std::endl;
-        });
+    output.send(MsgType::WORK_RESULTS, work_container{algo, new_pop});
 }
 
 
@@ -134,58 +124,52 @@ void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo,
                                                        (const std::vector<pagmo::vector_double>&,
                                                         std::size_t)>& popSorter)
 {
-    _workerThread = std::thread(
-        [this, algo, pop, popSorter]()
-        {
-            // 1) Set up socket for communicating with the parent thread
-            distributed::dealer_socket output{this->_ctx};
-            output.set_routing_id("worker_main");
-            output.connect("ipc://thread_socket");
+    // 1) Set up socket for communicating with the parent thread
+    distributed::dealer_socket output{this->_ctx};
+    output.set_routing_id("worker_main");
+    output.connect("ipc://thread_socket");
 
-            // 2) Get island count based on hardware core count
-            const unsigned islandCount = _compute_optimal_island_count();
+    // 2) Get island count based on hardware core count
+    const unsigned islandCount = _compute_optimal_island_count();
 
-            // 3) Construct and initialize islands with our algorithm and population (pop includes problem)
-            pagmo::archipelago archi{}; // TODO: Set archi topology? Maybe divide pop size by coreCount?
-            for (int i = 0; i < islandCount; ++i)
-            {
-                // Uses the EXISTING population as sent from controller, instead of creating a new one
-                // UDI will be either thread_island or fork_island (chosen internally)
-                archi.push_back(pagmo::island{algo, pop});
-            }
+    // 3) Construct and initialize islands with our algorithm and population (pop includes problem)
+    pagmo::archipelago archi{}; // TODO: Set archi topology? Maybe divide pop size by coreCount?
+    for (int i = 0; i < islandCount; ++i)
+    {
+        // Uses the EXISTING population as sent from controller, instead of creating a new one
+        // UDI will be either thread_island or fork_island (chosen internally)
+        archi.push_back(pagmo::island{algo, pop});
+    }
 
-            // 4) Run evolution on all islands in parallel
-            std::cout << "Using algorithm: " << algo.get_name() << std::endl;
-            archi.evolve(_archipelagoEvolutionCount);
-            archi.wait_check();
+    // 4) Run evolution on all islands in parallel
+    std::cout << "Using algorithm: " << algo.get_name() << std::endl;
+    archi.evolve(_archipelagoEvolutionCount);
+    archi.wait_check();
 
-            // 5) Merge individuals (and their fitness) from all islands into two vectors
-            const auto [allPopulations, allFitnesses] = _merge_populations(archi);
-            std::cout << "Size of allPopulations: " << allPopulations.size() << std::endl;
+    // 5) Merge individuals (and their fitness) from all islands into two vectors
+    const auto [allPopulations, allFitnesses] = _merge_populations(archi);
+    std::cout << "Size of allPopulations: " << allPopulations.size() << std::endl;
 
-            // 6) Sort and select POPULATION_SIZE best individuals
-            const auto newIndividualsIndexes = popSorter(allFitnesses, pop.size());
+    // 6) Sort and select POPULATION_SIZE best individuals
+    const auto newIndividualsIndexes = popSorter(allFitnesses, pop.size());
 
-            // 7) Construct the new population object, using the first island's state
-            auto firstIslPop = archi[0].get_population();
-            pagmo::population newPop{
-                firstIslPop.get_problem(),
-                newIndividualsIndexes.size(),
-                firstIslPop.get_seed() // TODO: Maybe remove this so the seed is different each time?
-            };
+    // 7) Construct the new population object, using the first island's state
+    auto firstIslPop = archi[0].get_population();
+    pagmo::population newPop{
+        firstIslPop.get_problem(),
+        newIndividualsIndexes.size(),
+        firstIslPop.get_seed() // TODO: Maybe remove this so the seed is different each time?
+    };
 
-            // 8) Fill the newPop object with new individuals (best POPULATION_SIZE individuals)
-            for (std::size_t i = 0; i < newIndividualsIndexes.size(); ++i)
-            {
-                const auto individualIndex = newIndividualsIndexes[i];
-                newPop.set_x(i, allPopulations[individualIndex]);
-            }
+    // 8) Fill the newPop object with new individuals (best POPULATION_SIZE individuals)
+    for (std::size_t i = 0; i < newIndividualsIndexes.size(); ++i)
+    {
+        const auto individualIndex = newIndividualsIndexes[i];
+        newPop.set_x(i, allPopulations[individualIndex]);
+    }
 
-            // 9) Send the algorithm (taken from the first island) and new population back to controller
-            output.send(MsgType::WORK_RESULTS, work_container{archi[0].get_algorithm(), newPop});
-
-            std::cout << "Worker thread finished. " << std::endl;
-        });
+    // 9) Send the algorithm (taken from the first island) and new population back to controller
+    output.send(MsgType::WORK_RESULTS, work_container{archi[0].get_algorithm(), newPop});
 }
 
 void distributed_worker::_archipelago_based_worker_singleobjective(pagmo::algorithm& algo, pagmo::population& pop)
@@ -225,22 +209,31 @@ void distributed_worker::_archipelago_based_worker_multiobjective(pagmo::algorit
     _archipelago_based_worker(algo, pop, multiObjectiveSort);
 }
 
-void distributed_worker::_start_worker_thread(pagmo::algorithm& algo, pagmo::population& pop)
+void distributed_worker::_start_worker_thread(const std::vector<std::byte>& workData)
 {
-    const bool isMultiObjective = pop.get_problem().get_nobj() > 1;
+    // We start the new thread right here, any further blocking calls won't affect the main thread
+    _workerThread = std::thread(
+        [this, workData]()
+        {
+            auto wct = vector_deserialize<work_container>(workData);
 
-    if (_workerMode == ARCHIPELAGO_BASED && isMultiObjective)
-    {
-        _archipelago_based_worker_multiobjective(algo, pop);
-    }
-    else if (_workerMode == ARCHIPELAGO_BASED && !isMultiObjective)
-    {
-        _archipelago_based_worker_singleobjective(algo, pop);
-    }
-    else
-    {
-        _single_threaded_worker(algo, pop);
-    }
+            const bool isMultiObjective = wct.pop.get_problem().get_nobj() > 1;
+
+            if (_workerMode == ARCHIPELAGO_BASED && isMultiObjective)
+            {
+                _archipelago_based_worker_multiobjective(wct.algo, wct.pop);
+            }
+            else if (_workerMode == ARCHIPELAGO_BASED && !isMultiObjective)
+            {
+                _archipelago_based_worker_singleobjective(wct.algo, wct.pop);
+            }
+            else
+            {
+                _single_threaded_worker(wct.algo, wct.pop);
+            }
+
+            std::cout << "Worker thread finished. " << std::endl;
+        });
 }
 
 //#####################################################################################
