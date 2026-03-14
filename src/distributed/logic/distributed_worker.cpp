@@ -4,6 +4,7 @@
 #include <random>
 
 #include "UUID.h"
+#include "vector_deserialize.h"
 #include "vector_istreambuf.h"
 #include "pagmo/archipelago.hpp"
 #include "pagmo/islands/thread_island.hpp"
@@ -17,11 +18,6 @@ void distributed_worker::_handle_Worker_Socket_Msg()
 {
     auto [type, binary] = _workerSocket.receive();
 
-    // Shared buffer and stream for deserializing
-    vector_istreambuf ibuf(binary);
-    std::istream is(&ibuf);
-    boost::archive::binary_iarchive ia(is);
-
     std::cout << "[" << static_cast<int>(type) << "] from controller" << std::endl;
 
     switch (type)
@@ -29,8 +25,7 @@ void distributed_worker::_handle_Worker_Socket_Msg()
     case MsgType::ALLOCATE_WORK:
         {
             // Deserialize received data
-            work_container wct{};
-            ia >> wct;
+            auto wct = vector_deserialize<work_container>(binary);
 
             // TODO: Handle situation if thread is already running
             _start_worker_thread(wct.algo, wct.pop);
@@ -41,8 +36,7 @@ void distributed_worker::_handle_Worker_Socket_Msg()
         // This means we need to forward this to the worker thread via the thread socket
         {
             // TODO: Remove, we can use constant sender ID
-            dll_binary_container dbc{};
-            ia >> dbc;
+            auto dbc = vector_deserialize<dll_binary_container>(binary);
 
             _threadSocket.send("worker_dll_handler", MsgType::DLL_BINARY, binary);
         }
@@ -281,13 +275,17 @@ distributed_worker::distributed_worker(const std::string& controllerAddress, con
     _workerId = "worker_" + uuid::v4::UUID::New().String();
     _workerSocket.set_routing_id(_workerId);
     _workerSocket.connect(controllerAddress);
-
-    // Send out initial message to controller
-    _workerSocket.send(MsgType::WORKER_JOIN);
 }
 
 void distributed_worker::client_loop()
 {
+    if (_firstRun)
+    {
+        // Send out initial message to controller
+        _workerSocket.send(MsgType::WORKER_JOIN);
+        _firstRun = false;
+    }
+
     // -1 means no poller timeout
     _poller.wait(std::chrono::milliseconds{-1});
 }
@@ -296,6 +294,10 @@ void distributed_worker::run_client()
 {
     _clientThread = std::thread([this]
     {
+        // Send out initial message to controller
+        _workerSocket.send(MsgType::WORKER_JOIN);
+        _firstRun = false;
+
         for (;;)
         {
             _poller.wait(std::chrono::milliseconds{-1});
@@ -332,11 +334,7 @@ std::optional<std::vector<std::byte>> distributed_worker::get_dll_from_controlle
     while (std::get<0>(receivedData) != MsgType::DLL_BINARY);
 
     // 3) Return the file itself
-    vector_istreambuf ibuf((std::get<1>(receivedData)));
-    std::istream is(&ibuf);
-    boost::archive::binary_iarchive ia(is);
-    dll_binary_container dbc{};
-    ia >> dbc;
+    auto dbc = vector_deserialize<dll_binary_container>(std::get<1>(receivedData));
 
     return dbc.dll_file;
 }

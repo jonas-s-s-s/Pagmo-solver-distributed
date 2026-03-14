@@ -85,6 +85,8 @@ class distributed_worker
 
     unsigned _archipelagoEvolutionCount;
 
+    // Helper for the client_loop() function
+    bool _firstRun = true;
 public:
     /**
      * Constructs a distributed worker, which will connect and accept work from a specified controller

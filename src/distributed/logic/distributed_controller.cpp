@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "vector_deserialize.h"
 #include "vector_istreambuf.h"
 
 //#####################################################################################
@@ -11,11 +12,6 @@
 void distributed_controller::_handle_Workers_Socket_Msg()
 {
     auto [workerId, type, binary] = _workersSocket.receive();
-
-    // Shared buffer and stream for deserializing
-    vector_istreambuf ibuf(binary);
-    std::istream is(&ibuf);
-    boost::archive::binary_iarchive ia(is);
 
     std::cout << "[" << static_cast<int>(type) << "] from worker" << std::endl;
 
@@ -49,11 +45,10 @@ void distributed_controller::_handle_Workers_Socket_Msg()
     case MsgType::GET_DLL:
         {
             // Deserialize the DLL request so we can get the name of this DLL
-            get_dll_request dll_request{};
-            ia >> dll_request;
+            const auto dll_request = vector_deserialize<get_dll_request>(binary);
 
             // Pass name of this DLL to the locator and return the output to worker
-            auto file = _dll_locator.get_dll(dll_request.dll_name);
+            const auto file = _dll_locator.get_dll(dll_request.dll_name);
             _workersSocket.send(workerId,
                                 MsgType::DLL_BINARY,
                                 dll_binary_container{dll_request.dll_name, file, dll_request.sender_id}

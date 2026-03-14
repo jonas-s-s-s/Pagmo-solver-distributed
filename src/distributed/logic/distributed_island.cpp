@@ -13,6 +13,7 @@
 #include <pagmo/threading.hpp>
 
 #include "UUID.h"
+#include "vector_deserialize.h"
 #include "vector_istreambuf.h"
 #include "pagmo/utils/multi_objective.hpp"
 
@@ -96,12 +97,8 @@ namespace pagmo
             }
 
             // 4) Pass results back to the pagmo::island object
-            vector_istreambuf ibuf(binary);
-            std::istream is(&ibuf);
-            boost::archive::binary_iarchive ia(is);
             // Deserialize received data
-            work_container work_results{};
-            ia >> work_results;
+            const auto work_results = vector_deserialize<work_container>(binary);
 
             // Replace the pagmo::island's population with the evolved population
             isl.set_population(work_results.pop);
