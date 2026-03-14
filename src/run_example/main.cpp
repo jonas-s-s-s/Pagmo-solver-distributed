@@ -3,41 +3,32 @@
 #include "distributed_controller.h"
 #include "distributed_worker.h"
 #include "islandTest.h"
+#include "udp_dll_wrapper.h"
 #include "udp_registry.h"
+#include "pagmo/problems/zdt.hpp"
 
-std::optional<std::vector<std::byte>> lib_provider(const std::string& lib_name)
-{
-    // TODO: remove ".dll"
-    try
-    {
-        std::basic_ifstream<std::byte> fStream{lib_name + ".dll", std::ios::binary};
-        std::vector<std::byte> file_content{std::istreambuf_iterator(fStream), {}};
-        return file_content;
-    } catch (...)
-    {
-        return std::nullopt;
-    }
-}
 
 int main(int argc, char* argv[])
 {
-    udp_registry::get().register_udp_provider(lib_provider);
-
-    const auto udp = udp_registry::get().construct_udp("problems");
-
-    std::cout << udp->get_lib_file_name() << std::endl;
-
-
-    /*
     std::string address = "tcp://localhost:5000";
     std::thread t;
 
     if (argc >= 2 && argv[1] == std::string("-run-controller"))
     {
+        // TODO: This locator is possibly duplicated, we already define a locator inside of controller
+        dll_locator locator;
+        udp_registry::get().set_lib_cache("controller_cache");
+        udp_registry::get().register_udp_provider(
+            [&locator](const std::string& libName)
+            {
+                return locator.get_dll(libName);
+            }
+        );
+
         distributed_controller controller{address};
         controller.run_server();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(250));
 
         islandTest::run_gaco(islandTest::run_dll_problem);
 
@@ -46,13 +37,21 @@ int main(int argc, char* argv[])
     else
     {
         distributed_worker worker{address};
+        // We register this worker with the UDP registry, so DLLs can be requested from controller
+        udp_registry::get().set_lib_cache("worker_cache");
+        udp_registry::get().register_udp_provider(
+            [&worker](const std::string& libName)
+            {
+                return worker.get_dll_from_controller(libName);
+            }
+        );
+
         for (;;)
         {
             worker.client_loop();
         }
     }
     t.join();
-    */
 
     return 0;
 }
