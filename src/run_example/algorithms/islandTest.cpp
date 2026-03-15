@@ -22,7 +22,7 @@
 
 void islandTest::run_algorithm_on_problem(const pagmo::problem& problem, const std::vector<pagmo::algorithm>& algorithm)
 {
-    // Proof of concept - Metasolver via "round-robin" algorithm scheduler
+    // Proof of concept - Metasolver via "round-robin" algorithm chooser
     auto algorithmPtr = algorithm.begin();
     auto getAlgorithm = [&]()
     {

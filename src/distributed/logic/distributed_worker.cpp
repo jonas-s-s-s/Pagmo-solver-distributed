@@ -30,11 +30,7 @@ void distributed_worker::_handle_Worker_Socket_Msg()
     case MsgType::DLL_BINARY:
         // Controller has responded to Worker thread's GET_DLL message.
         // This means we need to forward this to the worker thread via the thread socket
-        {
-            // TODO: Remove, we can use constant sender ID
-            auto dbc = vector_deserialize<dll_binary_container>(binary);
-            _threadSocket.send("worker_dll_handler", MsgType::DLL_BINARY, binary);
-        }
+        _threadSocket.send("worker_dll_handler", MsgType::DLL_BINARY, binary);
         break;
 
     default:
@@ -315,7 +311,7 @@ std::optional<std::vector<std::byte>> distributed_worker::get_dll_from_controlle
     socket.connect("ipc://thread_socket");
 
     // 1) Send the request
-    socket.send(MsgType::GET_DLL, get_dll_request{lib_name, myId});
+    socket.send(MsgType::GET_DLL, get_dll_request{lib_name});
 
     // 2) Block until controller eventually replies with DLL_BINARY
     std::tuple<MsgType, std::vector<std::byte>> receivedData{};

@@ -58,12 +58,9 @@ class get_dll_request
 {
 public:
     std::string dll_name;
-    // TODO: Remove this, we can use constant sender IDs for our sockets in Worker
-    std::string sender_id;
 
-    get_dll_request(const std::string& dll_name, const std::string& sender_id)
-        : dll_name(dll_name),
-          sender_id(sender_id)
+    get_dll_request(const std::string& dll_name)
+        : dll_name(dll_name)
     {
     }
 
@@ -79,13 +76,13 @@ private:
     template <typename Archive>
     void save(Archive& ar, unsigned) const
     {
-        pagmo::detail::to_archive(ar, dll_name, sender_id);
+        pagmo::detail::to_archive(ar, dll_name);
     }
 
     template <typename Archive>
     void load(Archive& ar, unsigned)
     {
-        pagmo::detail::from_archive(ar, dll_name, sender_id);
+        pagmo::detail::from_archive(ar, dll_name);
     }
 
     BOOST_SERIALIZATION_SPLIT_MEMBER()
@@ -96,14 +93,10 @@ class dll_binary_container
 public:
     std::string dll_name;
     std::optional<std::vector<std::byte>> dll_file;
-    // TODO: Remove this, we can use constant sender IDs for our sockets in Worker
-    std::string sender_id;
 
-    dll_binary_container(const std::string& dll_name, const std::optional<std::vector<std::byte>>& dll_file,
-                         const std::string& sender_id)
+    dll_binary_container(const std::string& dll_name, const std::optional<std::vector<std::byte>>& dll_file)
         : dll_name(dll_name),
-          dll_file(dll_file),
-          sender_id(sender_id)
+          dll_file(dll_file)
     {
     }
 
@@ -119,13 +112,13 @@ private:
     template <typename Archive>
     void save(Archive& ar, unsigned) const
     {
-        pagmo::detail::to_archive(ar, dll_name, dll_file, sender_id);
+        pagmo::detail::to_archive(ar, dll_name, dll_file);
     }
 
     template <typename Archive>
     void load(Archive& ar, unsigned)
     {
-        pagmo::detail::from_archive(ar, dll_name, dll_file, sender_id);
+        pagmo::detail::from_archive(ar, dll_name, dll_file);
     }
 
     BOOST_SERIALIZATION_SPLIT_MEMBER()

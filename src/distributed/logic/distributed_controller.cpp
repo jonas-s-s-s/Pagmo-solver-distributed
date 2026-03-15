@@ -52,7 +52,7 @@ void distributed_controller::_handle_Workers_Socket_Msg()
             const auto file = udp_registry::get().get_lib_as_file(dll_request.dll_name);
             _workersSocket.send(workerId,
                                 MsgType::DLL_BINARY,
-                                dll_binary_container{dll_request.dll_name, file, dll_request.sender_id}
+                                dll_binary_container{dll_request.dll_name, file}
             );
         }
         break;
