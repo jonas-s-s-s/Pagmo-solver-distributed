@@ -1,4 +1,5 @@
 #pragma once
+#include <filesystem>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -42,14 +43,14 @@ public:
      */
     void register_udp_provider(const udp_provider& providerFunc);
 
-    void set_lib_cache(const std::string& directory);
+    void set_local_cache_dir(const std::filesystem::path& directory);
 
     std::optional<std::vector<std::byte>> get_lib_as_file(const std::string& libName) const;
 
 private:
     std::mutex _registryMutex{};
 
-    std::string _lib_cache = "./lib_cache/";
+    std::filesystem::path _local_cache = "./lib_cache/";
 
     // Map which stores lib_loader objects of libraries which we have already loaded into memory
     std::unordered_map<std::string, lib_loader<udp_base>> _lib_loaders{};
@@ -62,6 +63,11 @@ private:
     void _load_lib(const std::string& libName);
 
     bool _is_lib_in_cache(const std::string& libName) const;
+
+    /**
+     * Returns a full path to a library file located in local cache (including extension)
+     */
+    std::filesystem::path _get_lib_path(const std::string& libName) const;
 
     udp_registry() = default;
 

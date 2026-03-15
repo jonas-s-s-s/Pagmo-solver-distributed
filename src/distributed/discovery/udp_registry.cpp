@@ -50,50 +50,49 @@ void udp_registry::register_udp_provider(const udp_provider& providerFunc)
     _udp_provider = providerFunc;
 }
 
-void udp_registry::set_lib_cache(const std::string& directory)
+void udp_registry::set_local_cache_dir(const std::filesystem::path& directory)
 {
     std::cout << "udp_registry cache has been set to:" << directory << std::endl;
 
-    _lib_cache = directory;
+    _local_cache = directory;
 }
 
 void udp_registry::_save_lib_into_fs(const std::string& libName, const std::vector<std::byte>& libFile)
 {
     std::cout << "udp_registry saving lib file: " << libName << std::endl;
 
-    // TODO: Convert this to std::filesystem path
-    const std::string path = _lib_cache + "/" + libName + portable_dll_extension();
+    const std::filesystem::path libPath = _get_lib_path(libName);
 
     // We're assuming the parent directory exists
-    if (!std::filesystem::exists(_lib_cache))
-        std::filesystem::create_directory(_lib_cache);
+    if (!std::filesystem::exists(_local_cache))
+        std::filesystem::create_directory(_local_cache);
 
-    std::ofstream file(path, std::ios::binary);
+    std::ofstream file(libPath, std::ios::binary);
     if (!file)
-        throw std::runtime_error("Error: Failed to open file " + path);
+        throw std::runtime_error("Error: Failed to open file " + libPath.string());
 
     file.write(reinterpret_cast<const char*>(libFile.data()), libFile.size());
 
     if (!file)
-        throw std::runtime_error("Error: Failed write to file " + path);
+        throw std::runtime_error("Error: Failed write to file " + libPath.string());
 }
 
 void udp_registry::_load_lib(const std::string& libName)
 {
     std::cout << "udp_registry loading lib file: " << libName << std::endl;
 
-    const std::string path = _lib_cache + "/" + libName + portable_dll_extension();
-
-    _lib_loaders.insert({libName, lib_loader<udp_base>{path}});
+    _lib_loaders.insert({libName, lib_loader<udp_base>{_get_lib_path(libName).string()}});
     _lib_loaders.at(libName).open_lib();
 }
 
 bool udp_registry::_is_lib_in_cache(const std::string& libName) const
 {
-    // TODO: Convert this to std::filesystem path
-    const std::string path = _lib_cache + "/" + libName + portable_dll_extension();
+    return std::filesystem::exists(_get_lib_path(libName));
+}
 
-    return std::filesystem::exists(path);
+std::filesystem::path udp_registry::_get_lib_path(const std::string& libName) const
+{
+    return _local_cache / std::string{libName + portable_dll_extension()};
 }
 
 std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::string& libName) const
@@ -111,8 +110,7 @@ std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::s
         return std::nullopt;
     }
 
-    // TODO: Convert this to std::filesystem path
-    const std::string libPath = _lib_cache + "/" + libName + portable_dll_extension();
+    const std::filesystem::path libPath = _get_lib_path(libName);
     try
     {
         std::basic_ifstream<std::byte> fStream{libPath, std::ios::binary};

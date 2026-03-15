@@ -15,7 +15,7 @@ int main(int argc, char* argv[])
 
     if (argc >= 2 && argv[1] == std::string("-run-controller"))
     {
-        udp_registry::get().set_lib_cache("controller_cache");
+        udp_registry::get().set_local_cache_dir("controller_cache");
 
         distributed_controller controller{address};
         controller.run_server();
@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
     {
         distributed_worker worker{address};
         // We register this worker with the UDP registry, so DLLs can be requested from controller
-        udp_registry::get().set_lib_cache("worker_cache");
+        udp_registry::get().set_local_cache_dir("worker_cache");
         udp_registry::get().register_udp_provider(
             [&worker](const std::string& libName)
             {
