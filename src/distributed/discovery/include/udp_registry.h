@@ -4,10 +4,12 @@
 #include <memory>
 #include <mutex>
 #include <optional>
+#include <queue>
 #include <string>
 #include <unordered_map>
 
 #include "lib_loader.h"
+#include "lru_cache.h"
 #include "udp_base.h"
 
 /**
@@ -18,7 +20,6 @@
 class udp_registry
 {
 public:
-
     /**
      * Returns a static instance of this object
      */
@@ -45,12 +46,19 @@ public:
 
     void set_local_cache_dir(const std::filesystem::path& directory);
 
-    std::optional<std::vector<std::byte>> get_lib_as_file(const std::string& libName) const;
+    void use_in_memory_cache(bool value);
+
+    std::optional<std::vector<std::byte>> get_lib_as_file(const std::string& libName);
 
 private:
     std::mutex _registryMutex{};
 
+    // Where to store or look for DLL files
     std::filesystem::path _local_cache = "./lib_cache/";
+
+    // An in-memory cache which prevents repeated reading of the DLL file from FS
+    bool _use_in_memory_cache = true;
+    lru_cache<std::vector<std::byte>> _libFilesBuffer{5};
 
     // Map which stores lib_loader objects of libraries which we have already loaded into memory
     std::unordered_map<std::string, lib_loader<udp_base>> _lib_loaders{};

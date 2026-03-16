@@ -53,8 +53,16 @@ void udp_registry::register_udp_provider(const udp_provider& providerFunc)
 void udp_registry::set_local_cache_dir(const std::filesystem::path& directory)
 {
     std::cout << "udp_registry cache has been set to:" << directory << std::endl;
-
     _local_cache = directory;
+}
+
+void udp_registry::use_in_memory_cache(bool value)
+{
+    if (!value)
+    {
+        _libFilesBuffer.clear();
+    }
+    _use_in_memory_cache = value;
 }
 
 void udp_registry::_save_lib_into_fs(const std::string& libName, const std::vector<std::byte>& libFile)
@@ -95,9 +103,8 @@ std::filesystem::path udp_registry::_get_lib_path(const std::string& libName) co
     return _local_cache / std::string{libName + portable_dll_extension()};
 }
 
-std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::string& libName) const
+std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::string& libName)
 {
-    // TODO: Add a cache for files to prevent repeated loading from the filesystem?
     std::cout << "get_lib_as_file: " << libName << std::endl;
 
     if (!_is_lib_in_cache(libName))
@@ -111,10 +118,22 @@ std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::s
     }
 
     const std::filesystem::path libPath = _get_lib_path(libName);
+
+    // Check our LRU buffer if this file isn't already cached in-memory
+    if (_use_in_memory_cache && _libFilesBuffer.contains(libPath.string()))
+    {
+        return _libFilesBuffer.get(libPath.string());
+    }
+
+    // Load file from FS
     try
     {
         std::basic_ifstream<std::byte> fStream{libPath, std::ios::binary};
         std::vector<std::byte> fileContent{std::istreambuf_iterator(fStream), {}};
+        if (_use_in_memory_cache)
+        {
+            _libFilesBuffer.put(libPath.string(), fileContent);
+        }
         return fileContent;
     }
     catch (std::exception e)
