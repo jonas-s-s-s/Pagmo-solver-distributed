@@ -52,12 +52,16 @@ void udp_registry::register_udp_provider(const udp_provider& providerFunc)
 
 void udp_registry::set_local_cache_dir(const std::filesystem::path& directory)
 {
+    std::scoped_lock lock(_registryMutex);
+
     std::cout << "udp_registry cache has been set to:" << directory << std::endl;
     _local_cache = directory;
 }
 
 void udp_registry::use_in_memory_cache(bool value)
 {
+    std::scoped_lock lock(_registryMutex);
+
     if (!value)
     {
         _libFilesBuffer.clear();
@@ -105,6 +109,8 @@ std::filesystem::path udp_registry::_get_lib_path(const std::string& libName) co
 
 std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::string& libName)
 {
+    std::scoped_lock lock(_registryMutex);
+
     std::cout << "get_lib_as_file: " << libName << std::endl;
 
     if (!_is_lib_in_cache(libName))
