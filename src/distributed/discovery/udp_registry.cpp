@@ -134,15 +134,28 @@ std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::s
     // Load file from FS
     try
     {
-        std::basic_ifstream<std::byte> fStream{libPath, std::ios::binary};
-        std::vector<std::byte> fileContent{std::istreambuf_iterator(fStream), {}};
+        std::ifstream fStream{libPath, std::ios::binary};
+        if (!fStream)
+        {
+            return std::nullopt;
+        }
+
+        fStream.seekg(0, std::ios::end);
+        std::size_t size = fStream.tellg();
+        fStream.seekg(0, std::ios::beg);
+
+        std::vector<std::byte> fileContent(size);
+
+        fStream.read(reinterpret_cast<char*>(fileContent.data()), size);
+
         if (_use_in_memory_cache)
         {
             _libFilesBuffer.put(libPath.string(), fileContent);
         }
+
         return fileContent;
     }
-    catch (std::exception e)
+    catch (const std::exception& e)
     {
         std::cerr << "Warning: error when attempting to load file: " << libPath << "Err msg:" << e.what() <<
             " Proceeding as if it doesn't exist." << std::endl;
