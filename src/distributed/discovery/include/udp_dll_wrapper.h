@@ -6,6 +6,7 @@
 #include "pagmo/types.hpp"
 #include <pagmo/s11n.hpp>
 #include <pagmo/detail/s11n_wrappers.hpp>
+#include <boost/serialization/shared_ptr.hpp>
 
 class udp_dll_wrapper
 {
@@ -50,7 +51,7 @@ private:
     template <typename Archive>
     void save(Archive& ar, unsigned) const
     {
-        pagmo::detail::to_archive(ar, _libFileName);
+        pagmo::detail::to_archive(ar, _libFileName, _udpPtr);
         std::cout << "udp_dll_wrapper successfully saved" << std::endl;
     }
 
@@ -59,9 +60,9 @@ private:
     {
         try
         {
-            pagmo::detail::from_archive(ar, _libFileName);
+            pagmo::detail::from_archive(ar, _libFileName, _udpPtr);
             // When deserializing we load the UDP via udp_registry
-            _initialize_udp();
+            //_initialize_udp();
             std::cout << "udp_dll_wrapper successfully loaded" << std::endl;
         }
         catch (...)

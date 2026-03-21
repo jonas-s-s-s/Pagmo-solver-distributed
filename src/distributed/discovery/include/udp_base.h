@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include "pagmo/types.hpp"
+#include <pagmo/s11n.hpp>
 
 class udp_base
 {
@@ -22,3 +23,4 @@ public:
 
     virtual ~udp_base() = default;
 };
+BOOST_SERIALIZATION_ASSUME_ABSTRACT(udp_base)

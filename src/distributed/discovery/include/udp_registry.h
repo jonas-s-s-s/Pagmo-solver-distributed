@@ -54,7 +54,7 @@ private:
     std::mutex _registryMutex{};
 
     // Where to store or look for DLL files
-    std::filesystem::path _local_cache = "./lib_cache/";
+    std::filesystem::path _local_cache = ".";
 
     // An in-memory cache which prevents repeated reading of the DLL file from FS
     bool _use_in_memory_cache = true;

@@ -24,6 +24,38 @@ public:
     ~example_problem_single_objective() override
     {
     };
+
+private:
+    //####################################
+    //# BOOST SERIALIZE
+    //####################################
+
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void save(Archive& ar, unsigned) const
+    {
+        boost::serialization::void_cast_register<example_problem_single_objective,udp_base>();
+        pagmo::detail::to_archive(ar);
+    }
+
+    template <typename Archive>
+    void load(Archive& ar, unsigned)
+    {
+        // TODO: Maybe void_cast_register needs to be here too?
+
+        try
+        {
+            pagmo::detail::from_archive(ar);
+        }
+        catch (...)
+        {
+            *this = example_problem_single_objective{};
+            throw;
+        }
+    }
+
+    BOOST_SERIALIZATION_SPLIT_MEMBER()
 };
 
 extern "C" DLL_PUBLIC void run_after_load();
@@ -31,3 +63,5 @@ extern "C" DLL_PUBLIC void run_after_load();
 extern "C" DLL_PUBLIC example_problem_single_objective* allocator();
 
 extern "C" DLL_PUBLIC void deleter(example_problem_single_objective* ptr);
+
+BOOST_CLASS_EXPORT_KEY(example_problem_single_objective)

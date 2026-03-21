@@ -45,3 +45,4 @@ void deleter(example_problem_single_objective* ptr)
     delete ptr;
 }
 
+BOOST_CLASS_EXPORT_IMPLEMENT(example_problem_single_objective)

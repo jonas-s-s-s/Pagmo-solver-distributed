@@ -4,6 +4,7 @@ message(STATUS "Executing top-level CMakeLists.txt...")
 
 set(CMAKE_CXX_STANDARD 20)
 
+
 #########################################################################################
 # EIGEN 3
 execute_process(
@@ -24,12 +25,29 @@ message(AUTHOR_WARNING "Make sure that you've installed Boost and Intel TBB befo
 message(AUTHOR_WARNING "Both Boost and Intel TBB must be in your env PATH variable (e.g. C:\\Program Files (x86)\\Intel\\oneAPI\\tbb\\2022.2\\bin) or else pagmo.dll won't load.'")
 
 set(PAGMO_WITH_EIGEN3 ON)
-# We need pagmo linked as a static library, or else there are problems with boost serialization:
-# https://stackoverflow.com/questions/51347113/dll-export-class-template-member-func-unresolved-external-symbol-any-chan
-# https://boost-users.boost.narkive.com/1vikEf1V/serialization-unregistered-class-exception-during-serialization-from-dll
-set(PAGMO_BUILD_STATIC_LIBRARY ON)
+
+# If we statically link to boost (default behavior on Windows), we run into an issue where there are two copies of Boost
+# in memory, one copy belongs to main.exe and the second one belongs to pagmo.dll, Boost serialize internally uses singleton
+# objects, those objects are in this case duplicated (separate for main.exe and pagmo.dll), which causes serialization to
+# fail with runtime exception: "unregistered class exception". Below is an email from 2004 which describes this issue:
+# > My suspicion is that the problem is caused by the serialization library
+# > using a static library, rather than a DLL. If the BOOST_CLASS_EXPORT
+# > commands updated a list contained in the static library then there would
+# > be one instance of this list statically linked into my DLL, and another
+# > in my EXE. Thus, the registration occurring in the DLL wouldn't affect
+# > the list used in the EXE.
+# (Source: https://listarchives.boost.org/Archives/boost/2004/03/62704.php)
+# More about this: https://stackoverflow.com/questions/58769398/is-linking-two-dlls-to-the-same-static-library-and-then-linking-both-dlls-togeth
+#set(PAGMO_BUILD_STATIC_LIBRARY ON)
+
+set(Boost_USE_MULTITHREADED ON)
+# ENSURE BOOST IS DYNAMICALLY LINKED (Works on Windows)
+# Prevents the problem described above; pagmo.dll, main.exe and any UDP DLLs dynamically link to the same boost serialize DLL
+set(Boost_USE_STATIC_LIBS OFF)
+set(Boost_USE_STATIC_RUNTIME OFF)
 
 add_subdirectory(./external/pagmo)
+
 
 # This needs to be added or Pagmo won't compile with newest MSVC (14.44)
 if(MSVC)
