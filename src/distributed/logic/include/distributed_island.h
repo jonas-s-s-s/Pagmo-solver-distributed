@@ -10,7 +10,7 @@ namespace pagmo
 {
     class distributed_island
     {
-        // We need to wrap there in shared ptr to make this class copy and move constructable
+        // We need to wrap these in shared ptr to make this class copy and move constructable
         // Or else it won't be recognized as UDI by Pagmo
         std::shared_ptr<zmq::context_t> _ctx;
         std::shared_ptr<distributed::dealer_socket> _dealerSocket;

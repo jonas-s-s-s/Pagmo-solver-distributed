@@ -4,6 +4,9 @@ message(STATUS "Executing top-level CMakeLists.txt...")
 
 set(CMAKE_CXX_STANDARD 20)
 
+# ALWAYS TRY TO LINK BOOST DYNAMICALLY!
+add_definitions(-DBOOST_ALL_DYN_LINK)
+
 #########################################################################################
 # EIGEN 3
 execute_process(

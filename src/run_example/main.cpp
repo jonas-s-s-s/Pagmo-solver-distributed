@@ -29,8 +29,12 @@ int main(int argc, char* argv[])
     else
     {
         distributed_worker worker{address};
+
+        std::mt19937 rng{std::random_device{}()};
+        int tempWorkerId = std::uniform_int_distribution<int>{1, 100}(rng);
+
         // We register this worker with the UDP registry, so DLLs can be requested from controller
-        udp_registry::get().set_local_cache_dir("worker_cache");
+        udp_registry::get().set_local_cache_dir("worker_cache" + std::to_string(tempWorkerId));
         udp_registry::get().register_udp_provider(
             [&worker](const std::string& libName)
             {

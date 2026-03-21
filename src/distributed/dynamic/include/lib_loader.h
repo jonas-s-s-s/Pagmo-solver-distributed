@@ -8,7 +8,7 @@
 
 /**
  * - Dynamic library loader providing a POSIX / Win32 interface for loading a C++ dynamic library
- * - The header should have "allocator" and "deleter" functions specified, the "run_after_load" function may be specified as well
+ * - The header should have "allocator" and "deleter" functions specified, the "clone" or "run_after_load" functions may be specified as well
  * @tparam T The class contained within this library
  */
 template <class T>
@@ -20,19 +20,41 @@ private:
     std::string _allocSymbol;
     std::string _deleteSymbol;
     std::string _runAfterLoadSymbol;
+    std::string _cloneSymbol;
 
     bool _afterLoadExecuted = false;
+
+    void _ensure_after_load()
+    {
+        if (_afterLoadExecuted)
+            return;
+
+        _afterLoadExecuted = true;
+
+        using runAfterLoadT = void (*)();
+
+        auto runAfterLoadFunc = reinterpret_cast<runAfterLoadT>(
+            portable_dlsym(_handle, _runAfterLoadSymbol.c_str())
+        );
+
+        if (runAfterLoadFunc)
+        {
+            runAfterLoadFunc();
+        }
+    }
 
 public:
     explicit lib_loader(std::string pathToLib,
                         std::string allocSymbol = "allocator",
                         std::string deleteSymbol = "deleter",
-                        std::string _runAfterLoadSymbol = "run_after_load") :
+                        std::string runAfterLoadSymbol = "run_after_load",
+                        std::string cloneSymbol = "cloner") :
         _handle(nullptr),
         _pathToLib(std::move(pathToLib)),
         _allocSymbol(std::move(allocSymbol)),
         _deleteSymbol(std::move(deleteSymbol)),
-        _runAfterLoadSymbol(std::move(_runAfterLoadSymbol))
+        _runAfterLoadSymbol(std::move(runAfterLoadSymbol)),
+        _cloneSymbol(std::move(cloneSymbol))
     {
     }
 
@@ -60,24 +82,15 @@ public:
     {
         using allocT = T *(*)();
         using deleteT = void (*)(T*);
-        using runAfterLoadT = void (*)();
 
-        auto allocFunc = reinterpret_cast<allocT>(portable_dlsym(_handle, _allocSymbol.c_str()));
-        auto deleteFunc = reinterpret_cast<deleteT>(portable_dlsym(_handle, _deleteSymbol.c_str()));
+        auto allocFunc = reinterpret_cast<allocT>(
+            portable_dlsym(_handle, _allocSymbol.c_str())
+        );
+        auto deleteFunc = reinterpret_cast<deleteT>(
+            portable_dlsym(_handle, _deleteSymbol.c_str())
+        );
 
-        // If run_after_load exists, run it (only once)
-        if (!_afterLoadExecuted)
-        {
-            _afterLoadExecuted = true;
-
-            auto runAfterLoadFunc = reinterpret_cast<runAfterLoadT>(
-                portable_dlsym(_handle, _runAfterLoadSymbol.c_str())
-            );
-            if (runAfterLoadFunc)
-            {
-                runAfterLoadFunc();
-            }
-        }
+        _ensure_after_load();
 
         if (!allocFunc || !deleteFunc)
         {
@@ -85,7 +98,39 @@ public:
             throw std::runtime_error("Can't find allocator or deleter symbol in " + _pathToLib);
         }
 
-        return std::shared_ptr<T>(allocFunc(), [deleteFunc](T* p) { deleteFunc(p); });
+        return std::shared_ptr<T>(
+            allocFunc(),
+            [deleteFunc](T* p) { deleteFunc(p); }
+        );
+    }
+
+    /**
+     * Clones an existing instance using the library-provided clone function
+     */
+    std::shared_ptr<T> clone_instance(const std::shared_ptr<T>& other)
+    {
+        using cloneT = T* (*)(const T*);
+        using deleteT = void (*)(T*);
+
+        auto cloneFunc = reinterpret_cast<cloneT>(
+            portable_dlsym(_handle, _cloneSymbol.c_str())
+        );
+
+        auto deleteFunc = reinterpret_cast<deleteT>(
+            portable_dlsym(_handle, _deleteSymbol.c_str())
+        );
+
+        _ensure_after_load();
+
+        if (!cloneFunc || !deleteFunc)
+        {
+            throw std::runtime_error("Can't find clone or deleter symbol in " + _pathToLib);
+        }
+
+        return std::shared_ptr<T>(
+            cloneFunc(other.get()),
+            [deleteFunc](T* p) { deleteFunc(p); }
+        );
     }
 
     /**

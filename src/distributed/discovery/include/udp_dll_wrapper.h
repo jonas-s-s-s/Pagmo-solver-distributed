@@ -9,10 +9,7 @@
 
 class udp_dll_wrapper
 {
-    // This shared_ptr is COPIED when the object is copy constructed.
-    // We assume that udp_base is thread-safe, because it has no internal state,
-    // so it doesn't matter that multiple threads share the same instance.
-    // As long as we don't have UDPs with internal state this won't be an issue.
+    // The udp contained within this shared_ptr must be cloned each time we copy construct udp_dll_wrapper
     std::shared_ptr<udp_base> _udpPtr{};
 
     std::string _libFileName;

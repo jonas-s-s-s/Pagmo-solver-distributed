@@ -31,3 +31,5 @@ extern "C" DLL_PUBLIC void run_after_load();
 extern "C" DLL_PUBLIC example_problem_single_objective* allocator();
 
 extern "C" DLL_PUBLIC void deleter(example_problem_single_objective* ptr);
+
+extern "C" example_problem_single_objective* cloner(const example_problem_single_objective* other);

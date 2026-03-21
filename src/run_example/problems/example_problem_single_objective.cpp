@@ -1,4 +1,3 @@
-
 #include "example_problem_single_objective.h"
 
 pagmo::vector_double example_problem_single_objective::fitness(const pagmo::vector_double& dv) const
@@ -45,3 +44,9 @@ void deleter(example_problem_single_objective* ptr)
     delete ptr;
 }
 
+example_problem_single_objective* cloner(const example_problem_single_objective* other)
+{
+    if (!other)
+        return nullptr;
+    return new example_problem_single_objective(*other);
+}

@@ -41,7 +41,7 @@ void islandTest::run_algorithm_on_problem(const pagmo::problem& problem, const s
     pagmo::archipelago archi{};
 
     // Construct 8 distributed islands and add them to archipelago
-    for (int i = 0; i < 1; ++i)
+    for (int i = 0; i < 4; ++i)
     {
         pagmo::distributed_island dist_island{};
         archi.push_back(pagmo::island{dist_island, getAlgorithm(), problem, POPULATION_SIZE});
