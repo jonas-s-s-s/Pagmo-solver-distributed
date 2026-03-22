@@ -19,34 +19,51 @@ class udp_dll_wrapper
     std::string _libFileName;
 
 public:
+    //#####################################################################################
+    //# PAGMO UDP public functions
+    //#####################################################################################
     pagmo::vector_double fitness(const pagmo::vector_double& dv) const;
-
     std::pair<pagmo::vector_double, pagmo::vector_double> get_bounds() const;
-
     pagmo::vector_double::size_type get_nec() const;
-
     pagmo::vector_double::size_type get_nic() const;
+    pagmo::vector_double::size_type get_nobj() const;
+    pagmo::vector_double::size_type get_nix() const;
+    pagmo::vector_double batch_fitness(const pagmo::vector_double& v) const;
+    bool has_batch_fitness() const;
+    bool has_gradient() const;
+    pagmo::vector_double gradient(const pagmo::vector_double& v) const;
+    bool has_gradient_sparsity() const;
+    pagmo::sparsity_pattern gradient_sparsity() const;
+    bool has_hessians() const;
+    std::vector<pagmo::vector_double> hessians(const pagmo::vector_double& v) const;
+    bool has_hessians_sparsity() const;
+    std::vector<pagmo::sparsity_pattern> hessians_sparsity() const;
+    bool has_set_seed() const;
+    void set_seed(unsigned s);
+    std::string get_name() const;
+    std::string get_extra_info() const;
+    pagmo::thread_safety get_thread_safety() const;
 
-    /**
-     * This constructor needs to exist or this class won't be recognized as UDP by Pagmo
-     */
+    // This constructor needs to exist or this class won't be recognized as UDP by Pagmo
     udp_dll_wrapper() = default;
+
+    //#####################################################################################
+    //# OTHER DLL WRAPPER public functions
+    //#####################################################################################
 
     explicit udp_dll_wrapper(const std::string& lib_file_name);
 
     [[nodiscard]] virtual std::string get_lib_file_name() const;
 
-    /**
-     * Custom copy constructor, ensuring that the UDP itself is cloned, not just the pointer being copied
-     */
+    // Custom copy constructor, ensuring that the UDP itself is cloned, not just the pointer being copied
     udp_dll_wrapper(const udp_dll_wrapper& other);
 
     udp_dll_wrapper& operator=(const udp_dll_wrapper& other);
 
 private:
-    //####################################
+    //#####################################################################################
     //# BOOST SERIALIZE
-    //####################################
+    //#####################################################################################
 
     friend class boost::serialization::access;
 

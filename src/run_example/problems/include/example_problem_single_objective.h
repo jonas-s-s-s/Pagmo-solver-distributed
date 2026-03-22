@@ -42,7 +42,6 @@ private:
     template <typename Archive>
     void load(Archive& ar, unsigned)
     {
-        // TODO: Does void_cast_register need to be here too or no?
         boost::serialization::void_cast_register<example_problem_single_objective,udp_base>();
 
         try

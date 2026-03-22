@@ -1,6 +1,10 @@
 
 #include "example_problem_single_objective.h"
 
+//#####################################################################################
+//# PAGMO UDP public functions
+//#####################################################################################
+
 pagmo::vector_double example_problem_single_objective::fitness(const pagmo::vector_double& dv) const
 {
     return {
@@ -24,6 +28,10 @@ std::pair<pagmo::vector_double, pagmo::vector_double> example_problem_single_obj
 {
     return {{1., 1., 1., 1.}, {5., 5., 5., 5.}};
 }
+
+//#####################################################################################
+//# Other
+//#####################################################################################
 
 std::string example_problem_single_objective::get_lib_file_name()
 {

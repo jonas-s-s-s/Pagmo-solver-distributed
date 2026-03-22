@@ -2,6 +2,10 @@
 
 #include <pagmo/problem.hpp>
 
+//#####################################################################################
+//# PAGMO UDP public functions
+//#####################################################################################
+
 pagmo::vector_double udp_dll_wrapper::fitness(const pagmo::vector_double& dv) const
 {
     return _udpPtr->fitness(dv);
@@ -22,10 +26,101 @@ pagmo::vector_double::size_type udp_dll_wrapper::get_nic() const
     return _udpPtr->get_nic();
 }
 
+pagmo::vector_double::size_type udp_dll_wrapper::get_nobj() const
+{
+    return _udpPtr->get_nobj();
+}
+
+pagmo::vector_double::size_type udp_dll_wrapper::get_nix() const
+{
+    return _udpPtr->get_nix();
+}
+
+pagmo::vector_double udp_dll_wrapper::batch_fitness(const pagmo::vector_double& v) const
+{
+    return _udpPtr->batch_fitness(v);
+}
+
+bool udp_dll_wrapper::has_batch_fitness() const
+{
+    return _udpPtr->has_capability(udp_base::capability::has_batch_fitness);
+
+}
+
+bool udp_dll_wrapper::has_gradient() const
+{
+    return _udpPtr->has_capability(udp_base::capability::has_gradient);
+
+}
+
+pagmo::vector_double udp_dll_wrapper::gradient(const pagmo::vector_double& v) const
+{
+    return _udpPtr->gradient(v);
+}
+
+bool udp_dll_wrapper::has_gradient_sparsity() const
+{
+    return _udpPtr->has_capability(udp_base::capability::has_gradient_sparsity);
+
+}
+
+pagmo::sparsity_pattern udp_dll_wrapper::gradient_sparsity() const
+{
+    return _udpPtr->gradient_sparsity();
+}
+
+bool udp_dll_wrapper::has_hessians() const
+{
+    return _udpPtr->has_capability(udp_base::capability::has_hessians);
+}
+
+std::vector<pagmo::vector_double> udp_dll_wrapper::hessians(const pagmo::vector_double& v) const
+{
+    return _udpPtr->hessians(v);
+}
+
+bool udp_dll_wrapper::has_hessians_sparsity() const
+{
+    return _udpPtr->has_capability(udp_base::capability::has_hessians_sparsity);
+}
+
+std::vector<pagmo::sparsity_pattern> udp_dll_wrapper::hessians_sparsity() const
+{
+    return _udpPtr->hessians_sparsity();
+}
+
+bool udp_dll_wrapper::has_set_seed() const
+{
+    return _udpPtr->has_capability(udp_base::capability::has_set_seed);
+}
+
+void udp_dll_wrapper::set_seed(unsigned s)
+{
+    return _udpPtr->set_seed(s);
+}
+
+std::string udp_dll_wrapper::get_name() const
+{
+    return _udpPtr->get_name();
+}
+
+std::string udp_dll_wrapper::get_extra_info() const
+{
+    return _udpPtr->get_extra_info();
+}
+
+pagmo::thread_safety udp_dll_wrapper::get_thread_safety() const
+{
+    return _udpPtr->get_thread_safety();
+}
+
+//#####################################################################################
+//# OTHER DLL WRAPPER public functions
+//#####################################################################################
+
 udp_dll_wrapper::udp_dll_wrapper(const std::string& lib_file_name) : _libFileName(lib_file_name)
 {
     // This is called when the UDP is constructed manually.
-    // Make sure to register an "udp provider" in udp_registry even on the controller side.
 
     // construct_udp throws std::runtime_error if not found
     _udpPtr = udp_registry::get().construct_udp(_libFileName);
