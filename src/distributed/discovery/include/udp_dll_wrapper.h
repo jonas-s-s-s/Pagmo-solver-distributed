@@ -61,8 +61,6 @@ private:
         try
         {
             pagmo::detail::from_archive(ar, _libFileName, _udpPtr);
-            // When deserializing we load the UDP via udp_registry
-            //_initialize_udp();
             std::cout << "udp_dll_wrapper successfully loaded" << std::endl;
         }
         catch (...)

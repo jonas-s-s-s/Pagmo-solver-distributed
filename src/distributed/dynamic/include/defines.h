@@ -42,7 +42,7 @@ using HANDLE_TYPE = void*;
 
 inline HANDLE_TYPE portable_dlopen(const char* path)
 {
-    return dlopen(path, RTLD_NOW | RTLD_LAZY);
+    return dlopen(path, RTLD_NOW);
 }
 
 inline void* portable_dlsym(HANDLE_TYPE handle, const char* symbol)
