@@ -42,7 +42,8 @@ private:
     template <typename Archive>
     void load(Archive& ar, unsigned)
     {
-        // TODO: Maybe void_cast_register needs to be here too?
+        // TODO: Does void_cast_register need to be here too or no?
+        boost::serialization::void_cast_register<example_problem_single_objective,udp_base>();
 
         try
         {
@@ -63,5 +64,7 @@ extern "C" DLL_PUBLIC void run_after_load();
 extern "C" DLL_PUBLIC example_problem_single_objective* allocator();
 
 extern "C" DLL_PUBLIC void deleter(example_problem_single_objective* ptr);
+
+extern "C" DLL_PUBLIC example_problem_single_objective* cloner(const example_problem_single_objective* other);
 
 BOOST_CLASS_EXPORT_KEY(example_problem_single_objective)

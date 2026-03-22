@@ -45,4 +45,11 @@ void deleter(example_problem_single_objective* ptr)
     delete ptr;
 }
 
+example_problem_single_objective* cloner(const example_problem_single_objective* other)
+{
+    if (!other)
+        return nullptr;
+    return new example_problem_single_objective(*other);
+}
+
 BOOST_CLASS_EXPORT_IMPLEMENT(example_problem_single_objective)

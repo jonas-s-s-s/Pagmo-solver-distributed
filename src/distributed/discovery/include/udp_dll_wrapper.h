@@ -8,20 +8,15 @@
 #include <pagmo/detail/s11n_wrappers.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 
+#include "udp_registry.h"
+
 class udp_dll_wrapper
 {
-    // This shared_ptr is COPIED when the object is copy constructed.
-    // We assume that udp_base is thread-safe, because it has no internal state,
-    // so it doesn't matter that multiple threads share the same instance.
-    // As long as we don't have UDPs with internal state this won't be an issue.
+    // The udp contained within this shared_ptr must be cloned each time we copy construct udp_dll_wrapper.
+    // Using shared_ptr appears to be the best option, unique_ptr would needlessly complicate the code.
     std::shared_ptr<udp_base> _udpPtr{};
 
     std::string _libFileName;
-
-    /**
-     * Attempts to initialize the UDP via udp_registry, if UDP is not found, an exception is thrown
-     */
-    void _initialize_udp();
 
 public:
     pagmo::vector_double fitness(const pagmo::vector_double& dv) const;
@@ -40,6 +35,13 @@ public:
     explicit udp_dll_wrapper(const std::string& lib_file_name);
 
     [[nodiscard]] virtual std::string get_lib_file_name() const;
+
+    /**
+     * Custom copy constructor, ensuring that the UDP itself is cloned, not just the pointer being copied
+     */
+    udp_dll_wrapper(const udp_dll_wrapper& other);
+
+    udp_dll_wrapper& operator=(const udp_dll_wrapper& other);
 
 private:
     //####################################
@@ -60,7 +62,13 @@ private:
     {
         try
         {
-            pagmo::detail::from_archive(ar, _libFileName, _udpPtr);
+            // 1) Deserialize _libFileName first
+            ar >> _libFileName;
+            // 2) Attempt to load the dynamic library of this UDP
+            udp_registry::get().initialize_udp(_libFileName);
+            // 3) Deserialize UDP, lib containing the UDP class should now be available in the address space of this process
+            ar >> _udpPtr;
+
             std::cout << "udp_dll_wrapper successfully loaded" << std::endl;
         }
         catch (...)

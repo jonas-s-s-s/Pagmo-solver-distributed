@@ -11,7 +11,6 @@
 int main(int argc, char* argv[])
 {
     std::string address = "tcp://localhost:5000";
-    std::thread t;
 
     if (argc >= 2 && argv[1] == std::string("-run-controller"))
     {
@@ -43,7 +42,6 @@ int main(int argc, char* argv[])
             worker.client_loop();
         }
     }
-    t.join();
 
     return 0;
 }

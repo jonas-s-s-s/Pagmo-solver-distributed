@@ -1,13 +1,6 @@
 #include "udp_dll_wrapper.h"
 
-#include "udp_registry.h"
 #include <pagmo/problem.hpp>
-
-void udp_dll_wrapper::_initialize_udp()
-{
-    // construct_udp throws std::runtime_error if not found
-    _udpPtr = udp_registry::get().construct_udp(_libFileName);
-}
 
 pagmo::vector_double udp_dll_wrapper::fitness(const pagmo::vector_double& dv) const
 {
@@ -32,13 +25,35 @@ pagmo::vector_double::size_type udp_dll_wrapper::get_nic() const
 udp_dll_wrapper::udp_dll_wrapper(const std::string& lib_file_name) : _libFileName(lib_file_name)
 {
     // This is called when the UDP is constructed manually.
-    // So make sure to register an "udp provider" in udp_registry even on the controller side.
-    _initialize_udp();
+    // Make sure to register an "udp provider" in udp_registry even on the controller side.
+
+    // construct_udp throws std::runtime_error if not found
+    _udpPtr = udp_registry::get().construct_udp(_libFileName);
 }
 
 std::string udp_dll_wrapper::get_lib_file_name() const
 {
     return _libFileName;
+}
+
+udp_dll_wrapper::udp_dll_wrapper(const udp_dll_wrapper& other) : _libFileName(other._libFileName)
+{
+    // Possibly allow an empty object to exist (we expose the default constructor)
+    if (!_libFileName.empty())
+        _udpPtr = udp_registry::get().clone_udp(other._udpPtr);
+}
+
+udp_dll_wrapper& udp_dll_wrapper::operator=(const udp_dll_wrapper& other)
+{
+    if (this == &other)
+        return *this;
+
+    _libFileName = other._libFileName;
+
+    if (!_libFileName.empty())
+        _udpPtr = udp_registry::get().clone_udp(other._udpPtr);
+
+    return *this;
 }
 
 BOOST_CLASS_EXPORT(udp_dll_wrapper)

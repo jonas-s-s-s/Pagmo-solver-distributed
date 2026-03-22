@@ -30,11 +30,25 @@ public:
     }
 
     /**
+     * Loads the dynamic library without constructing any object
+     * @param name Name of the UDP's library
+     */
+    void initialize_udp(const std::string& name);
+
+    /**
      * Constructs a UDP, which is contained within some dynamic library
      * @param name Name of the UDP's library
      * @return Shared ptr pointing to a newly constructed instance of the UDP
      */
     std::shared_ptr<udp_base> construct_udp(const std::string& name);
+
+    /**
+     * Clones a UDP which was previously created using construct_udp
+     * @param other pointer to the object that's meant to be cloned
+     * @return Shared ptr pointing to the cloned object
+     */
+    std::shared_ptr<udp_base> clone_udp(const std::shared_ptr<udp_base>& other);
+
 
     using udp_provider = std::function<std::optional<std::vector<std::byte>>(const std::string&)>;
 
