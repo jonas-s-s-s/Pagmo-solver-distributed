@@ -122,7 +122,7 @@ void islandTest::run_cec2014(const std::vector<pagmo::algorithm>& algorithm)
 
 void islandTest::run_dll_problem(const std::vector<pagmo::algorithm>& algorithm)
 {
-    udp_dll_wrapper probWrapper{"problems"};
+    udp_dll_wrapper probWrapper{"schwefel_udp"};
 
     const pagmo::problem prob{probWrapper};
     run_algorithm_on_problem(prob, algorithm);
