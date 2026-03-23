@@ -3,6 +3,7 @@
 #include <unordered_set>
 
 #include "router_socket.h"
+#include "worker_info_repository.h"
 #include "zmq.hpp"
 #include "zmq_addon.hpp"
 
@@ -14,6 +15,9 @@ class distributed_controller
     distributed::router_socket _workersSocket;
     distributed::router_socket _islandsSocket;
     std::thread _serverThread;
+
+    // Contains "static" information about the workers
+    worker_info_repository _workerInfoRepository{};
 
     // Islands which cannot be allocated to any worker (_freeWorkersPool is empty) are stored here along with their data
     std::unordered_map<std::string, std::vector<std::byte>> _islandsWaitingForAlloc{};
@@ -35,4 +39,6 @@ public:
     void run_server();
 
     ~distributed_controller();
+
+    worker_info_repository& get_worker_info_repository();
 };

@@ -21,6 +21,7 @@ void distributed_controller::_handle_Workers_Socket_Msg()
     case MsgType::WORKER_JOIN:
         std::cout << "Worker " << workerId << " joined" << std::endl;
         _add_free_worker(workerId);
+        _workerInfoRepository.add_worker_record(workerId, {});
         std::cout << "Free workers: " << _freeWorkersPool.size() << std::endl;
         break;
 
@@ -28,6 +29,7 @@ void distributed_controller::_handle_Workers_Socket_Msg()
 
         // TODO: Worker keepalive?
         _freeWorkersPool.erase(workerId);
+        _workerInfoRepository.remove_worker_record(workerId);
         // TODO: Handle busy worker leave - push back into islandsWaitingForAlloc?
 
         break;
@@ -184,4 +186,13 @@ distributed_controller::~distributed_controller()
     {
         _serverThread.join();
     }
+}
+
+//####################################################################################
+//# Other public member functions
+//#####################################################################################
+
+worker_info_repository& distributed_controller::get_worker_info_repository()
+{
+    return _workerInfoRepository;
 }

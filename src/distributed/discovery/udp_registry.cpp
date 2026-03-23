@@ -13,7 +13,6 @@ void udp_registry::initialize_udp(const std::string& name)
     std::scoped_lock lock(_registryMutex);
 
     std::cout << "udp_registry initializing udp library: " << name << std::endl;
-    // TODO: DUPLICATE CODE? MERGE WITH THE FUNC BELOW?
 
     // If this lib is already loaded, do nothing
     if (_lib_loaders.contains(name))

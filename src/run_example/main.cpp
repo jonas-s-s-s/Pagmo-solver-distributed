@@ -3,9 +3,7 @@
 #include "distributed_controller.h"
 #include "distributed_worker.h"
 #include "islandTest.h"
-#include "udp_dll_wrapper.h"
 #include "udp_registry.h"
-#include "pagmo/problems/zdt.hpp"
 
 
 int main(int argc, char* argv[])
