@@ -2,6 +2,7 @@
 
 #include <iostream>
 
+#include "population_tools.h"
 #include "UUID.h"
 #include "vector_deserialize.h"
 #include "pagmo/archipelago.hpp"
@@ -97,28 +98,7 @@ unsigned distributed_worker::_compute_optimal_island_count()
     return islandCount;
 }
 
-std::tuple<std::vector<pagmo::vector_double>, std::vector<pagmo::vector_double>> distributed_worker::_merge_populations(
-    pagmo::archipelago archi)
-{
-    std::vector<pagmo::vector_double> allPopulations{};
-    std::vector<pagmo::vector_double> allFitnesses{};
-    for (const auto& isl : archi)
-    {
-        auto islPop = isl.get_population().get_x();
-        auto islFit = isl.get_population().get_f();
-        allPopulations.insert(allPopulations.end(), islPop.begin(), islPop.end());
-        allFitnesses.insert(allFitnesses.end(), islFit.begin(), islFit.end());
-    }
-
-    return {allPopulations, allFitnesses};
-}
-
-
-void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo,
-                                                   pagmo::population& pop,
-                                                   const std::function<std::vector<pagmo::pop_size_t>
-                                                       (const std::vector<pagmo::vector_double>&,
-                                                        std::size_t)>& popSorter)
+void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo, pagmo::population& pop)
 {
     // 1) Set up socket for communicating with the parent thread
     distributed::dealer_socket output{this->_ctx};
@@ -143,66 +123,21 @@ void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo,
     archi.wait_check();
 
     // 5) Merge individuals (and their fitness) from all islands into two vectors
-    const auto [allPopulations, allFitnesses] = _merge_populations(archi);
+    const auto [allPopulations, allFitnesses] = merge_populations(archi);
     std::cout << "Size of allPopulations: " << allPopulations.size() << std::endl;
 
-    // 6) Sort and select POPULATION_SIZE best individuals
-    const auto newIndividualsIndexes = popSorter(allFitnesses, pop.size());
-
-    // 7) Construct the new population object, using the first island's state
+    // 6) Build a new population containing only the best POPULATION_SIZE individuals
     auto firstIslPop = archi[0].get_population();
-    pagmo::population newPop{
+    const auto newPop = select_best_N_into_new_population(
         firstIslPop.get_problem(),
-        newIndividualsIndexes.size(),
+        allPopulations,
+        allFitnesses,
+        pop.size(),
         firstIslPop.get_seed() // TODO: Maybe remove this so the seed is different each time?
-    };
+    );
 
-    // 8) Fill the newPop object with new individuals (best POPULATION_SIZE individuals)
-    for (std::size_t i = 0; i < newIndividualsIndexes.size(); ++i)
-    {
-        const auto individualIndex = newIndividualsIndexes[i];
-        newPop.set_x(i, allPopulations[individualIndex]);
-    }
-
-    // 9) Send the algorithm (taken from the first island) and new population back to controller
+    // 7) Send the algorithm (taken from the first island) and new population back to controller
     output.send(MsgType::WORK_RESULTS, work_container{archi[0].get_algorithm(), newPop});
-}
-
-void distributed_worker::_archipelago_based_worker_singleobjective(pagmo::algorithm& algo, pagmo::population& pop)
-{
-    std::cout << "Archipelago-based worker (singe-objective) started... " << std::endl;
-
-    const auto prob = pop.get_problem();
-    const auto singleObjectiveSort = [prob](const std::vector<pagmo::vector_double>& fitness, const std::size_t N)
-    {
-        if (prob.get_nc() == 0)
-        {
-            // Non-constrained version
-            std::vector<pagmo::pop_size_t> idx(fitness.size());
-            std::iota(idx.begin(), idx.end(), static_cast<pagmo::pop_size_t>(0));
-            std::sort(idx.begin(), idx.end(), [&fitness](auto a, auto b) { return fitness[a][0] < fitness[b][0]; });
-            idx.resize(N);
-            return idx;
-        }
-        // Constrained version
-        auto idx = pagmo::sort_population_con(fitness, prob.get_nec(), prob.get_c_tol());
-        idx.resize(N);
-        return idx;
-    };
-
-    _archipelago_based_worker(algo, pop, singleObjectiveSort);
-}
-
-void distributed_worker::_archipelago_based_worker_multiobjective(pagmo::algorithm& algo, pagmo::population& pop)
-{
-    std::cout << "Archipelago-based worker (multi-objective) started... " << std::endl;
-
-    const auto multiObjectiveSort = [](const std::vector<pagmo::vector_double>& fitness, std::size_t N)
-    {
-        return pagmo::select_best_N_mo(fitness, N);
-    };
-
-    _archipelago_based_worker(algo, pop, multiObjectiveSort);
 }
 
 void distributed_worker::_start_worker_thread(const std::vector<std::byte>& workData)
@@ -213,15 +148,9 @@ void distributed_worker::_start_worker_thread(const std::vector<std::byte>& work
         {
             auto wct = vector_deserialize<work_container>(workData);
 
-            const bool isMultiObjective = wct.pop.get_problem().get_nobj() > 1;
-
-            if (_workerMode == ARCHIPELAGO_BASED && isMultiObjective)
+            if (_workerMode == ARCHIPELAGO_BASED)
             {
-                _archipelago_based_worker_multiobjective(wct.algo, wct.pop);
-            }
-            else if (_workerMode == ARCHIPELAGO_BASED && !isMultiObjective)
-            {
-                _archipelago_based_worker_singleobjective(wct.algo, wct.pop);
+                _archipelago_based_worker(wct.algo, wct.pop);
             }
             else
             {
@@ -301,6 +230,10 @@ distributed_worker::~distributed_worker()
         _clientThread.join();
     }
 }
+
+//#####################################################################################
+//# Other public member functions
+//#####################################################################################
 
 std::optional<std::vector<std::byte>> distributed_worker::get_dll_from_controller(const std::string& lib_name)
 {
