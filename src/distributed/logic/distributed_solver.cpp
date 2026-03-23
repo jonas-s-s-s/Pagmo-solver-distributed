@@ -1,5 +1,6 @@
 #include "distributed_solver.h"
 
+#include "aixlog.hpp"
 #include "distributed_island.h"
 #include "population_tools.h"
 #include "pagmo/utils/multi_objective.hpp"
@@ -31,7 +32,7 @@ void distributed_solver::evolve(const pagmo::problem& problem, const std::vector
 
         const auto& alg = *algorithmPtr;
         std::advance(algorithmPtr, 1);
-        std::cout << "Choosing algorithm: " << alg.get_name() << std::endl;
+        LOG(TRACE) << "Choosing algorithm: " << alg.get_name() << std::endl;
         return alg;
     };
 
@@ -63,7 +64,7 @@ pagmo::vector_double distributed_solver::wait_until_completion()
 
     _archipelago.wait_check();
 
-    std::cout << "Main Archipelago: Evolution finished" << std::endl;
+    LOG(TRACE) << "Main Archipelago: Evolution finished" << std::endl;
     auto [allPopulations, allFitnesses] = merge_populations(_archipelago);
     auto bestIndividual = select_best_individual(
         _archipelago.begin()->get_population().get_problem(),
@@ -71,7 +72,6 @@ pagmo::vector_double distributed_solver::wait_until_completion()
         allFitnesses
     );
 
-    std::cout << "Best individual:" << std::endl;
     std::string bestStr = "[";
     for (double n : bestIndividual)
     {
@@ -79,7 +79,7 @@ pagmo::vector_double distributed_solver::wait_until_completion()
         bestStr += ", ";
     }
     bestStr += "]";
-    std::cout << bestStr << std::endl;
+    LOG(TRACE) << "Best individual: " << bestStr << std::endl;
 
     return bestIndividual;
 }

@@ -1,5 +1,7 @@
 #include "distributed_worker.h"
 
+#include "aixlog.hpp"
+
 #include <iostream>
 
 #include "population_tools.h"
@@ -17,7 +19,7 @@ void distributed_worker::_handle_Worker_Socket_Msg()
 {
     auto [type, binary] = _workerSocket.receive();
 
-    std::cout << "[" << static_cast<int>(type) << "] from controller" << std::endl;
+    LOG(TRACE) << "[" << static_cast<int>(type) << "] from controller" << std::endl;
 
     switch (type)
     {
@@ -35,7 +37,7 @@ void distributed_worker::_handle_Worker_Socket_Msg()
         break;
 
     default:
-        std::cerr << "WARNING: controller sent unhandled message type: " << static_cast<int>(type) << std::endl;
+        LOG(WARNING) << "WARNING: controller sent unhandled message type: " << static_cast<int>(type) << std::endl;
     }
 }
 
@@ -59,7 +61,7 @@ void distributed_worker::_handle_Thread_Socket_Msg()
         break;
 
     default:
-        std::cerr << "WARNING: worker thread socket sent unhandled message type: " << static_cast<int>(type) <<
+        LOG(WARNING) << "WARNING: worker thread socket sent unhandled message type: " << static_cast<int>(type) <<
             std::endl;
     }
 }
@@ -70,13 +72,13 @@ void distributed_worker::_handle_Thread_Socket_Msg()
 
 void distributed_worker::_single_threaded_worker(pagmo::algorithm& algo, pagmo::population& pop)
 {
-    std::cout << "Single-threaded worker started... " << std::endl;
+    LOG(TRACE) << "Single-threaded worker started... " << std::endl;
 
     distributed::dealer_socket output{this->_ctx};
     output.set_routing_id("worker_main");
     output.connect("ipc://thread_socket");
 
-    std::cout << "Running algorithm: " << algo.get_name() << std::endl;
+    LOG(TRACE) << "Running algorithm: " << algo.get_name() << std::endl;
     const pagmo::population new_pop = algo.evolve(pop);
 
     output.send(MsgType::WORK_RESULTS, work_container{algo, new_pop});
@@ -88,18 +90,20 @@ unsigned distributed_worker::_compute_optimal_island_count()
     unsigned islandCount = std::thread::hardware_concurrency();
     if (islandCount == 0)
     {
-        std::cout << "Defaulting to 8 islands (Cannot detect core count)" << std::endl;
+        LOG(TRACE) << "Defaulting to 8 islands (Cannot detect core count)" << std::endl;
         islandCount = 8;
     }
     else
     {
-        std::cout << "Using " << islandCount << " islands" << std::endl;
+        LOG(TRACE) << "Using " << islandCount << " islands" << std::endl;
     }
     return islandCount;
 }
 
 void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo, pagmo::population& pop)
 {
+    LOG(TRACE) << "Archipelago-based worker started... " << std::endl;
+
     // 1) Set up socket for communicating with the parent thread
     distributed::dealer_socket output{this->_ctx};
     output.set_routing_id("worker_main");
@@ -118,13 +122,13 @@ void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo, pagmo
     }
 
     // 4) Run evolution on all islands in parallel
-    std::cout << "Using algorithm: " << algo.get_name() << std::endl;
+    LOG(TRACE) << "Using algorithm: " << algo.get_name() << std::endl;
     archi.evolve(_archipelagoEvolutionCount);
     archi.wait_check();
 
     // 5) Merge individuals (and their fitness) from all islands into two vectors
     const auto [allPopulations, allFitnesses] = merge_populations(archi);
-    std::cout << "Size of allPopulations: " << allPopulations.size() << std::endl;
+    LOG(TRACE) << "Size of allPopulations: " << allPopulations.size() << std::endl;
 
     // 6) Build a new population containing only the best POPULATION_SIZE individuals
     auto firstIslPop = archi[0].get_population();
@@ -157,7 +161,7 @@ void distributed_worker::_start_worker_thread(const std::vector<std::byte>& work
                 _single_threaded_worker(wct.algo, wct.pop);
             }
 
-            std::cout << "Worker thread finished. " << std::endl;
+            LOG(TRACE) << "Worker thread finished. " << std::endl;
         });
 }
 

@@ -1,4 +1,5 @@
 #include "distributed_island.h"
+#include "aixlog.hpp"
 
 #include <exception>
 #include <stdexcept>
@@ -79,15 +80,15 @@ namespace pagmo
 
             // 2) Allocate our algorithm and population to some worker node via controller
             _dealerSocket->set_routing_id(_islandId);
-            std::cout << "Running distributed island" << std::endl;
+            LOG(TRACE) << "Running distributed island" << std::endl;
             _dealerSocket->connect("ipc://distributed_controller_islands_socket");
-            std::cout << "Distributed island connected" << std::endl;
+            LOG(TRACE) << "Distributed island connected" << std::endl;
             _dealerSocket->send(MsgType::ALLOCATE_WORK, work_container{initial_algo, initial_pop});
-            std::cout << "Distributed island allocate work sent" << std::endl;
+            LOG(TRACE) << "Distributed island allocate work sent" << std::endl;
 
             // 3) Wait until controller returns results from worker
             auto [type, binary] = _dealerSocket->receive();
-            std::cout << "island received [" << static_cast<int>(type) << "] from controller" << std::endl;
+            LOG(TRACE) << "island received [" << static_cast<int>(type) << "] from controller" << std::endl;
 
             if (type != MsgType::WORK_RESULTS)
             {

@@ -1,4 +1,5 @@
 #include "udp_registry.h"
+#include "aixlog.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -12,7 +13,7 @@ void udp_registry::initialize_udp(const std::string& name)
 {
     std::scoped_lock lock(_registryMutex);
 
-    std::cout << "udp_registry initializing udp library: " << name << std::endl;
+    LOG(TRACE) << "initializing udp library: " << name << std::endl;
 
     // If this lib is already loaded, do nothing
     if (_lib_loaders.contains(name))
@@ -48,7 +49,7 @@ std::shared_ptr<udp_base> udp_registry::construct_udp(const std::string& name)
     // Anything calling this needs to first acquire the mutex, without this there could be a race condition on if (_udp_provider)
     std::scoped_lock lock(_registryMutex);
 
-    std::cout << "udp_registry constructing an instance of: " << name << std::endl;
+    LOG(TRACE) << "constructing an instance of: " << name << std::endl;
 
     // If this lib is already loaded, simply construct a new object
     if (_lib_loaders.contains(name))
@@ -84,7 +85,7 @@ std::shared_ptr<udp_base> udp_registry::clone_udp(const std::shared_ptr<udp_base
 {
     std::scoped_lock lock(_registryMutex);
 
-    std::cout << "udp_registry cloning an instance of: " << other->get_lib_file_name() << std::endl;
+    LOG(TRACE) << "cloning an instance of: " << other->get_lib_file_name() << std::endl;
 
     // We get the lib_loader associated with this UDP and call its clone function
     const std::string libName = other->get_lib_file_name();
@@ -101,7 +102,7 @@ void udp_registry::register_udp_provider(const udp_provider& providerFunc)
     // This will prevent provider from changing if any thread is executing inside construct_udp()
     std::scoped_lock lock(_registryMutex);
 
-    std::cout << "udp_provider has been registered in udp_registry" << std::endl;
+    LOG(TRACE) << "udp_provider has been registered in udp_registry" << std::endl;
 
     _udp_provider = providerFunc;
 }
@@ -110,7 +111,7 @@ void udp_registry::set_local_cache_dir(const std::filesystem::path& directory)
 {
     std::scoped_lock lock(_registryMutex);
 
-    std::cout << "udp_registry cache has been set to: " << directory << std::endl;
+    LOG(TRACE) << "cache has been set to: " << directory << std::endl;
 
     _local_cache = directory;
 }
@@ -130,7 +131,7 @@ std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::s
 {
     std::scoped_lock lock(_registryMutex);
 
-    std::cout << "get_lib_as_file: " << libName << std::endl;
+    LOG(TRACE) << "get_lib_as_file: " << libName << std::endl;
 
     if (!_is_lib_in_cache(libName))
     {
@@ -176,13 +177,13 @@ std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::s
     }
     catch (const std::exception& e)
     {
-        std::cerr << "Warning: error when attempting to load file: " << libPath << "Err msg:" << e.what() <<
+        LOG(WARNING) << "Warning: error when attempting to load file: " << libPath << "Err msg:" << e.what() <<
             " Proceeding as if it doesn't exist." << std::endl;
         return std::nullopt;
     }
     catch (...)
     {
-        std::cerr << "Warning: unknown error when attempting to load file: " << libPath <<
+        LOG(WARNING) << "Warning: unknown error when attempting to load file: " << libPath <<
             " Proceeding as if it doesn't exist." << std::endl;
         return std::nullopt;
     }
@@ -195,7 +196,7 @@ std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::s
 
 void udp_registry::_save_lib_into_fs(const std::string& libName, const std::vector<std::byte>& libFile)
 {
-    std::cout << "udp_registry saving lib file: " << libName << std::endl;
+    LOG(TRACE) << "udp_registry saving lib file: " << libName << std::endl;
 
     const std::filesystem::path libPath = _get_lib_path(libName);
 
@@ -215,7 +216,7 @@ void udp_registry::_save_lib_into_fs(const std::string& libName, const std::vect
 
 void udp_registry::_load_lib(const std::string& libName)
 {
-    std::cout << "udp_registry loading lib file: " << libName << std::endl;
+    LOG(TRACE) << "udp_registry loading lib file: " << libName << std::endl;
 
     _lib_loaders.insert({libName, lib_loader<udp_base>{_get_lib_path(libName).string()}});
     _lib_loaders.at(libName).open_lib();

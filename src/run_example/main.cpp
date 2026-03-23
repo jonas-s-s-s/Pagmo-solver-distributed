@@ -1,3 +1,4 @@
+#include "aixlog.hpp"
 #include "distributed_controller.h"
 #include "distributed_solver.h"
 #include "distributed_worker.h"
@@ -8,6 +9,8 @@
 
 int main(int argc, char* argv[])
 {
+    AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::trace);
+
     std::string address = "tcp://localhost:5000";
 
     if (argc >= 2 && argv[1] == std::string("-run-controller"))

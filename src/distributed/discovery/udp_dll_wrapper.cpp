@@ -1,4 +1,5 @@
 #include "udp_dll_wrapper.h"
+#include "aixlog.hpp"
 
 #include <pagmo/problem.hpp>
 
