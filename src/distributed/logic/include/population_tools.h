@@ -6,6 +6,7 @@
 #include "pagmo/archipelago.hpp"
 #include "pagmo/types.hpp"
 #include "pagmo/utils/multi_objective.hpp"
+#include "pagmo/utils/constrained.hpp"
 
 /**
  * Helper function to merge the population of all islands (and their fitness) into two vectors
@@ -33,8 +34,8 @@ inline std::tuple<std::vector<pagmo::vector_double>, std::vector<pagmo::vector_d
  * @returns Indexes of the best N individuals
  */
 inline std::vector<pagmo::pop_size_t> select_best_N_so(const pagmo::problem& prob,
-                                                                    const std::vector<pagmo::vector_double>& fitness,
-                                                                    const std::size_t N)
+                                                       const std::vector<pagmo::vector_double>& fitness,
+                                                       const std::size_t N)
 {
     if (prob.get_nc() == 0)
     {
@@ -123,4 +124,46 @@ inline pagmo::population select_best_N_into_new_population(const pagmo::problem&
     }
 
     return build_new_population(prob, allPopulations, bestIndividualIndexes, seed);
+}
+
+/**
+ * Selects best N individuals from allPopulations
+ */
+inline std::vector<pagmo::vector_double> select_best_N_individuals(const pagmo::problem& prob,
+                                                                   const std::vector<pagmo::vector_double>&
+                                                                   allPopulations,
+                                                                   const std::vector<pagmo::vector_double>& allFitness,
+                                                                   std::size_t N)
+{
+    std::vector<pagmo::vector_double> output{};
+
+    const bool isMultiObjective = prob.get_nobj() > 1;
+    std::vector<pagmo::pop_size_t> bestIndividualIndexes;
+    // Individuals in a population need to be sorted differently depending on if it's a multi-objective or single-objective problem
+    if (isMultiObjective)
+    {
+        bestIndividualIndexes = pagmo::select_best_N_mo(allFitness, N);
+    }
+    else
+    {
+        bestIndividualIndexes = select_best_N_so(prob, allFitness, N);
+    }
+
+    // Fill the output object
+    for (const size_t idx : bestIndividualIndexes)
+    {
+        output.emplace_back(allPopulations[idx]);
+    }
+
+    return output;
+}
+
+/**
+ * Selects THE best individual from allPopulations
+ */
+inline pagmo::vector_double select_best_individual(const pagmo::problem& prob,
+                                                   const std::vector<pagmo::vector_double>& allPopulations,
+                                                   const std::vector<pagmo::vector_double>& allFitness)
+{
+    return select_best_N_individuals(prob, allPopulations, allFitness, 1).at(0);
 }

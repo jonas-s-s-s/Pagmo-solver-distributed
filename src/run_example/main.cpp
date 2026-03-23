@@ -1,9 +1,9 @@
-#include <fstream>
-
 #include "distributed_controller.h"
+#include "distributed_solver.h"
 #include "distributed_worker.h"
-#include "islandTest.h"
+#include "udp_dll_wrapper.h"
 #include "udp_registry.h"
+#include "pagmo/algorithms/gaco.hpp"
 
 
 int main(int argc, char* argv[])
@@ -14,14 +14,15 @@ int main(int argc, char* argv[])
     {
         udp_registry::get().set_local_cache_dir("controller_cache");
 
-        distributed_controller controller{address};
-        controller.run_server();
+        udp_dll_wrapper probWrapper{"schwefel_udp"};
+        const pagmo::problem prob{probWrapper};
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(250));
+        pagmo::algorithm algo{pagmo::gaco(1500)};
+        algo.set_verbosity(0);
 
-        islandTest::run_gaco(islandTest::run_dll_problem);
-
-        //islandTest::run_meta_multiobjective(islandTest::run_zdt);
+        distributed_solver ds{address};
+        ds.evolve(prob, {algo}, 100);
+        ds.wait_until_completion();
     }
     else
     {

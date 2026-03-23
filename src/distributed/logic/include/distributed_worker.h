@@ -42,8 +42,7 @@ class distributed_worker
     void _single_threaded_worker(pagmo::algorithm& algo, pagmo::population& pop);
 
     /**
-     * Base archipelago worker, needs population sorting function which depends on if the problem is multi-objective
-     * or single-objective.
+     * Archipelago based worker, causes multiple CPU cores to be used
      */
     void _archipelago_based_worker(pagmo::algorithm& algo, pagmo::population& pop);
 

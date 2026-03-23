@@ -2,6 +2,7 @@ add_library(distributed_logic
         distributed_island.cpp
         distributed_controller.cpp
         distributed_worker.cpp
+        distributed_solver.cpp
         worker_info_repository.cpp
 )
 
