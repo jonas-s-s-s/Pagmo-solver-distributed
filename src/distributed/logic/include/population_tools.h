@@ -127,16 +127,12 @@ inline pagmo::population select_best_N_into_new_population(const pagmo::problem&
 }
 
 /**
- * Selects best N individuals from allPopulations
+ * Get indexes of best N individuals from the provided allFitnesses vector
  */
-inline std::vector<pagmo::vector_double> select_best_N_individuals(const pagmo::problem& prob,
-                                                                   const std::vector<pagmo::vector_double>&
-                                                                   allPopulations,
-                                                                   const std::vector<pagmo::vector_double>& allFitness,
-                                                                   std::size_t N)
+inline std::vector<pagmo::pop_size_t> get_best_N_individuals_indexes(const pagmo::problem& prob,
+                                                                     const std::vector<pagmo::vector_double>& allFitness,
+                                                                     std::size_t N)
 {
-    std::vector<pagmo::vector_double> output{};
-
     const bool isMultiObjective = prob.get_nobj() > 1;
     std::vector<pagmo::pop_size_t> bestIndividualIndexes;
     // Individuals in a population need to be sorted differently depending on if it's a multi-objective or single-objective problem
@@ -148,6 +144,21 @@ inline std::vector<pagmo::vector_double> select_best_N_individuals(const pagmo::
     {
         bestIndividualIndexes = select_best_N_so(prob, allFitness, N);
     }
+
+    return bestIndividualIndexes;
+}
+
+/**
+ * Selects best N individuals from allPopulations
+ */
+inline std::vector<pagmo::vector_double> select_best_N_individuals(const pagmo::problem& prob,
+                                                                   const std::vector<pagmo::vector_double>&
+                                                                   allPopulations,
+                                                                   const std::vector<pagmo::vector_double>& allFitness,
+                                                                   std::size_t N)
+{
+    std::vector<pagmo::vector_double> output{};
+    const std::vector<pagmo::pop_size_t> bestIndividualIndexes = get_best_N_individuals_indexes(prob, allFitness, N);
 
     // Fill the output object
     for (const size_t idx : bestIndividualIndexes)
@@ -166,4 +177,33 @@ inline pagmo::vector_double select_best_individual(const pagmo::problem& prob,
                                                    const std::vector<pagmo::vector_double>& allFitness)
 {
     return select_best_N_individuals(prob, allPopulations, allFitness, 1).at(0);
+}
+
+inline std::string double_vector_to_str(const pagmo::vector_double& vec)
+{
+    std::string out = "[";
+    for (const double n : vec)
+    {
+        out += std::to_string(n) + ", ";
+    }
+    out.pop_back();
+    out.back() = ']';
+
+    return out;
+}
+
+inline std::string double_vector_to_csv(const pagmo::vector_double& vec)
+{
+    std::string out;
+    out += "\"";
+    for (size_t i = 0; i < vec.size(); ++i)
+    {
+        out += std::to_string(vec[i]);
+        if (i + 1 < vec.size())
+        {
+            out += ";";
+        }
+    }
+    out += "\"";
+    return out;
 }
