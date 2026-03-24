@@ -27,6 +27,8 @@ public:
 
     pagmo::vector_double wait_until_completion();
 
+    std::vector<pagmo::vector_double> get_best_N_individuals(size_t N);
+
     void wait_until_workers_connect(size_t workerCount);
 
     void wait_until_workers_connect();

@@ -1,115 +1,49 @@
-#include <utility>
-
 #include "aixlog.hpp"
 #include "distributed_controller.h"
 #include "distributed_solver.h"
 #include "distributed_worker.h"
-#include "population_tools.h"
-#include "solver_benchmark.h"
 #include "udp_dll_wrapper.h"
 #include "udp_registry.h"
-#include "pagmo/algorithms/de.hpp"
 #include "pagmo/algorithms/gaco.hpp"
-#include "pagmo/problems/rosenbrock.hpp"
-#include "pagmo/problems/zdt.hpp"
-#include "pagmo/utils/hypervolume.hpp"
 
 
 int main(int argc, char* argv[])
 {
     AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::trace);
 
-    /*
-    const pagmo::problem prob{pagmo::zdt{1}};
-    solver_benchmark s{prob};
+    std::string address = "tcp://localhost:5000";
 
+    if (argc >= 2 && argv[1] == std::string("-run-controller"))
     {
-        const pagmo::population pop{prob, 100};
-        const pagmo::nsga2 algo{50};
-        const auto out = algo.evolve(pop);
-        const auto best = select_best_individual(prob, out.get_x(), out.get_f());
-        s.add_result(best, "First");
-    }
+        udp_registry::get().set_local_cache_dir("controller_cache");
 
+        udp_dll_wrapper probWrapper{"schwefel_udp"};
+        const pagmo::problem prob{probWrapper};
+
+        pagmo::algorithm algo{pagmo::gaco(1500)};
+        algo.set_verbosity(0);
+
+        distributed_solver ds{address};
+        ds.evolve(prob, {algo}, 100);
+        ds.wait_until_completion();
+    }
+    else
     {
-        const pagmo::population pop{prob, 60};
-        const pagmo::nsga2 algo{50};
-        const auto out = algo.evolve(pop);
-        const auto best = select_best_individual(prob, out.get_x(), out.get_f());
-        s.add_result(best, "Second");
+        distributed_worker worker{address};
+        // We register this worker with the UDP registry, so DLLs can be requested from controller
+        udp_registry::get().set_local_cache_dir("worker_cache");
+        udp_registry::get().register_udp_provider(
+            [&worker](const std::string& libName)
+            {
+                return worker.get_dll_from_controller(libName);
+            }
+        );
+
+        for (;;)
+        {
+            worker.client_loop();
+        }
     }
-
-    {
-        const pagmo::population pop{prob, 40};
-        const pagmo::nsga2 algo{50};
-        const auto out = algo.evolve(pop);
-        const auto best = select_best_individual(prob, out.get_x(), out.get_f());
-        s.add_result(best, "Third");
-    }
-
-    {
-        const pagmo::population pop{prob, 40};
-        const pagmo::nsga2 algo{30};
-        const auto out = algo.evolve(pop);
-        const auto best = select_best_individual(prob, out.get_x(), out.get_f());
-        s.add_result(best, "Fourth");
-    }
-
-    {
-        const pagmo::population pop{prob, 40};
-        const pagmo::nsga2 algo{20};
-        const auto out = algo.evolve(pop);
-        const auto best = select_best_individual(prob, out.get_x(), out.get_f());
-        s.add_result(best, "Fifth");
-    }
-
-    std::cout << s.get_benchmark_stats_csv() << std::endl;
-    */
-
-
-    const pagmo::problem prob{pagmo::rosenbrock{10}}; // single-objective
-    solver_benchmark s{prob};
-
-    {
-        const pagmo::population pop{prob, 100};
-        const pagmo::de algo{50};
-        const auto out = algo.evolve(pop);
-        const auto best = select_best_individual(prob, out.get_x(), out.get_f());
-        s.add_result(best, "First");
-    }
-
-    {
-        const pagmo::population pop{prob, 60};
-        const pagmo::de algo{50};
-        const auto out = algo.evolve(pop);
-        const auto best = select_best_individual(prob, out.get_x(), out.get_f());
-        s.add_result(best, "Second");
-    }
-
-    {
-        const pagmo::population pop{prob, 40};
-        const pagmo::de algo{50};
-        const auto out = algo.evolve(pop);
-        const auto best = select_best_individual(prob, out.get_x(), out.get_f());
-        s.add_result(best, "Third");
-    }
-
-    {
-        const pagmo::population pop{prob, 40};
-        const pagmo::de algo{30};
-        const auto out = algo.evolve(pop);
-        const auto best = select_best_individual(prob, out.get_x(), out.get_f());
-        s.add_result(best, "Fourth");
-    }
-
-    {
-        const pagmo::population pop{prob, 40};
-        const pagmo::de algo{20};
-        const auto out = algo.evolve(pop);
-        const auto best = select_best_individual(prob, out.get_x(), out.get_f());
-        s.add_result(best, "Fifth");
-    }
-    std::cout << s.get_benchmark_stats_csv() << std::endl;
 
     return 0;
 }

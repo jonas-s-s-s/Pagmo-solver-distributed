@@ -84,6 +84,24 @@ pagmo::vector_double distributed_solver::wait_until_completion()
     return bestIndividual;
 }
 
+std::vector<pagmo::vector_double> distributed_solver::get_best_N_individuals(size_t N)
+{
+    if (_archipelago.size() == 0)
+    {
+        return {};
+    }
+
+    auto [allPopulations, allFitnesses] = merge_populations(_archipelago);
+    auto bestIndividuals = select_best_N_individuals(
+        _archipelago.begin()->get_population().get_problem(),
+        allPopulations,
+        allFitnesses,
+        N
+    );
+
+    return bestIndividuals;
+}
+
 void distributed_solver::wait_until_workers_connect(size_t workerCount)
 {
     _controller.get_worker_info_repository().wait_until_worker_count(workerCount);
