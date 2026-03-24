@@ -91,6 +91,31 @@ inline pagmo::population build_new_population(
 }
 
 /**
+ * Get indexes of best N individuals from the provided allFitnesses vector
+ */
+inline std::vector<pagmo::pop_size_t> get_best_N_individuals_indexes(const pagmo::problem& prob,
+                                                                     const std::vector<pagmo::vector_double>& allFitness,
+                                                                     std::size_t N)
+{
+    const bool isMultiObjective = prob.get_nobj() > 1;
+    std::vector<pagmo::pop_size_t> bestIndividualIndexes;
+    // Individuals in a population need to be sorted differently depending on if it's a multi-objective or single-objective problem
+    if (isMultiObjective)
+    {
+        // TODO: select_best_N_mo doesn't ensure that "rank 0" solutions are before the "rank 1" solutions, is this intended?
+        //bestIndividualIndexes = pagmo::select_best_N_mo(allFitness, N);
+        auto sortedIndexes = pagmo::sort_population_mo(allFitness);
+        bestIndividualIndexes.assign(sortedIndexes.begin(), sortedIndexes.begin() + std::min(N, sortedIndexes.size()));
+    }
+    else
+    {
+        bestIndividualIndexes = select_best_N_so(prob, allFitness, N);
+    }
+
+    return bestIndividualIndexes;
+}
+
+/**
  * - Selects best N individuals from allPopulations, then returns a new pagmo::population containing only them
  * - Workflow of this function is:
  *  - 1) Determine if the problem is SO or MO
@@ -111,42 +136,11 @@ inline pagmo::population select_best_N_into_new_population(const pagmo::problem&
                                                            std::size_t N,
                                                            const std::optional<unsigned> seed = std::nullopt)
 {
-    const bool isMultiObjective = prob.get_nobj() > 1;
-    std::vector<pagmo::pop_size_t> bestIndividualIndexes;
-    // Individuals in a population need to be sorted differently depending on if it's a multi-objective or single-objective problem
-    if (isMultiObjective)
-    {
-        bestIndividualIndexes = pagmo::select_best_N_mo(allFitness, N);
-    }
-    else
-    {
-        bestIndividualIndexes = select_best_N_so(prob, allFitness, N);
-    }
+    const std::vector<pagmo::pop_size_t> bestIndividualIndexes = get_best_N_individuals_indexes(prob, allFitness, N);
 
     return build_new_population(prob, allPopulations, bestIndividualIndexes, seed);
 }
 
-/**
- * Get indexes of best N individuals from the provided allFitnesses vector
- */
-inline std::vector<pagmo::pop_size_t> get_best_N_individuals_indexes(const pagmo::problem& prob,
-                                                                     const std::vector<pagmo::vector_double>& allFitness,
-                                                                     std::size_t N)
-{
-    const bool isMultiObjective = prob.get_nobj() > 1;
-    std::vector<pagmo::pop_size_t> bestIndividualIndexes;
-    // Individuals in a population need to be sorted differently depending on if it's a multi-objective or single-objective problem
-    if (isMultiObjective)
-    {
-        bestIndividualIndexes = pagmo::select_best_N_mo(allFitness, N);
-    }
-    else
-    {
-        bestIndividualIndexes = select_best_N_so(prob, allFitness, N);
-    }
-
-    return bestIndividualIndexes;
-}
 
 /**
  * Selects best N individuals from allPopulations
