@@ -26,4 +26,8 @@ public:
     );
 
     pagmo::vector_double wait_until_completion();
+
+    void wait_until_workers_connect(size_t workerCount);
+
+    void wait_until_workers_connect();
 };

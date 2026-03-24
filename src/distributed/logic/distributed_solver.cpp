@@ -83,3 +83,13 @@ pagmo::vector_double distributed_solver::wait_until_completion()
 
     return bestIndividual;
 }
+
+void distributed_solver::wait_until_workers_connect(size_t workerCount)
+{
+    _controller.get_worker_info_repository().wait_until_worker_count(workerCount);
+}
+
+void distributed_solver::wait_until_workers_connect()
+{
+    wait_until_workers_connect(_expectedWorkerCount);
+}

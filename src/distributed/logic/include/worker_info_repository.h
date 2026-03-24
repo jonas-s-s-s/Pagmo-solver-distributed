@@ -15,6 +15,9 @@ class worker_info_repository
     // To protect the unordered_map
     std::mutex _mapMutex{};
 
+    // Notifying when _workerRecords changes
+    std::condition_variable _cv;
+
     /*
      * - Include any constant info about the worker, such as OS, hardware details, etc. in here
      * - For now reserved for future use
@@ -34,4 +37,6 @@ public:
     std::optional<worker_info> get_worker_record(const std::string& workerID);
 
     size_t get_worker_count();
+
+    void wait_until_worker_count(size_t target);
 };
