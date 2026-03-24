@@ -65,12 +65,7 @@ pagmo::vector_double distributed_solver::wait_until_completion()
     _archipelago.wait_check();
 
     LOG(TRACE) << "Main Archipelago: Evolution finished" << std::endl;
-    auto [allPopulations, allFitnesses] = merge_populations(_archipelago);
-    auto bestIndividual = select_best_individual(
-        _archipelago.begin()->get_population().get_problem(),
-        allPopulations,
-        allFitnesses
-    );
+    pagmo::vector_double bestIndividual = get_best_individual();
 
     std::string bestStr = "[";
     for (double n : bestIndividual)
@@ -83,6 +78,24 @@ pagmo::vector_double distributed_solver::wait_until_completion()
 
     return bestIndividual;
 }
+
+pagmo::vector_double distributed_solver::get_best_individual()
+{
+    if (_archipelago.size() == 0)
+    {
+        return {};
+    }
+
+    auto [allPopulations, allFitnesses] = merge_populations(_archipelago);
+    pagmo::vector_double bestIndividual = select_best_individual(
+        _archipelago.begin()->get_population().get_problem(),
+        allPopulations,
+        allFitnesses
+    );
+
+    return bestIndividual;
+}
+
 
 std::vector<pagmo::vector_double> distributed_solver::get_best_N_individuals(size_t N)
 {
