@@ -13,8 +13,8 @@ set_target_properties(problems
         # Make sure the file name of this lib is "problems"
         OUTPUT_NAME "problems"
 
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src/run_example/"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src/run_example/"
+        LIBRARY_OUTPUT_DIRECTORY "${DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY "${DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR}"
 )
 
 
@@ -34,6 +34,6 @@ set_target_properties(schwefel_udp
         # Make sure the file name of this lib is "schwefel_udp"
         OUTPUT_NAME "schwefel_udp"
 
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src/run_example/"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src/run_example/"
+        LIBRARY_OUTPUT_DIRECTORY "${DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY "${DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR}"
 )

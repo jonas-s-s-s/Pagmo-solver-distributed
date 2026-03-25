@@ -4,6 +4,12 @@ message(STATUS "Executing top-level CMakeLists.txt...")
 
 set(CMAKE_CXX_STANDARD 20)
 
+# Allow the user to override where DLLs are placed
+if(NOT DEFINED DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR)
+    set(DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
+endif()
+
+message(STATUS "Distributed solver runtime output directory: ${DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR}")
 
 #########################################################################################
 # EIGEN 3
@@ -59,10 +65,9 @@ endif()
 # So the EXE find this dll
 set_target_properties(pagmo
         PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src/run_example/"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src/run_example/"
+        LIBRARY_OUTPUT_DIRECTORY "${DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY "${DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR}"
 )
-
 #########################################################################################
 # libzmq
 # IMPORTANT: CMake generation step ends with ninja error if this is not set to OFF
@@ -72,8 +77,8 @@ add_subdirectory(./external/libzmq)
 # So the EXE find this dll
 set_target_properties(libzmq
         PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src/run_example/"
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/src/run_example/"
+        LIBRARY_OUTPUT_DIRECTORY "${DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR}"
+        RUNTIME_OUTPUT_DIRECTORY "${DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR}"
 )
 #########################################################################################
 
