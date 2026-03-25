@@ -81,19 +81,8 @@ pagmo::vector_double distributed_solver::wait_until_completion()
 
 pagmo::vector_double distributed_solver::get_best_individual()
 {
-    if (_archipelago.size() == 0)
-    {
-        return {};
-    }
-
-    auto [allPopulations, allFitnesses] = merge_populations(_archipelago);
-    pagmo::vector_double bestIndividual = select_best_individual(
-        _archipelago.begin()->get_population().get_problem(),
-        allPopulations,
-        allFitnesses
-    );
-
-    return bestIndividual;
+    const auto best = get_best_N_individuals(1);
+    return (best.size() > 0) ? best.at(0) : pagmo::vector_double{};
 }
 
 
