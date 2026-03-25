@@ -9,6 +9,9 @@ class distributed_solver
 
     pagmo::archipelago _archipelago{};
 
+    std::vector<pagmo::vector_double> _initialHints{};
+    void _set_island_hints(pagmo::island& isl) const;
+
 public:
     /**
      * - Constructs the distributed solver and its internal components
@@ -24,6 +27,8 @@ public:
                 size_t populationSize,
                 size_t cycleCount = 1
     );
+
+    void set_initial_hints(const std::vector<pagmo::vector_double>& hints);
 
     pagmo::vector_double wait_until_completion();
 
