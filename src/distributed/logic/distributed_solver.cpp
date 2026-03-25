@@ -111,6 +111,11 @@ pagmo::vector_double distributed_solver::get_best_individual()
     return (best.size() > 0) ? best.at(0) : pagmo::vector_double{};
 }
 
+pagmo::evolve_status distributed_solver::get_status() const
+{
+    return _archipelago.status();
+}
+
 
 std::vector<pagmo::vector_double> distributed_solver::get_best_N_individuals(size_t N)
 {
