@@ -22,8 +22,22 @@ public:
     {
     }
 
-    explicit schwefel_udp(unsigned dim) : _schwefel(dim)
+    explicit schwefel_udp(const std::any& dim)
     {
+        unsigned dimCasted = 1;
+        if (dim.has_value())
+        {
+            try
+            {
+                dimCasted = std::any_cast<unsigned>(dim);
+            }
+            catch (...)
+            {
+                throw std::runtime_error("Schwefel UDP only accepts dim (unsigned) as its parameter.");
+            }
+        }
+
+        _schwefel = pagmo::schwefel{dimCasted};
     }
 
     ~schwefel_udp() override
@@ -69,7 +83,7 @@ private:
 
 extern "C" DLL_PUBLIC void run_after_load();
 
-extern "C" DLL_PUBLIC schwefel_udp* allocator();
+extern "C" DLL_PUBLIC schwefel_udp* allocator(const std::any& params);
 
 extern "C" DLL_PUBLIC void deleter(schwefel_udp* ptr);
 

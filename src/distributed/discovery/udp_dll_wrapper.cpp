@@ -119,12 +119,12 @@ pagmo::thread_safety udp_dll_wrapper::get_thread_safety() const
 //# OTHER DLL WRAPPER public functions
 //#####################################################################################
 
-udp_dll_wrapper::udp_dll_wrapper(const std::string& lib_file_name) : _libFileName(lib_file_name)
+udp_dll_wrapper::udp_dll_wrapper(const std::string& lib_file_name, const std::any& lib_object_params) : _libFileName(lib_file_name)
 {
     // This is called when the UDP is constructed manually.
 
     // construct_udp throws std::runtime_error if not found
-    _udpPtr = udp_registry::get().construct_udp(_libFileName);
+    _udpPtr = udp_registry::get().construct_udp(_libFileName, lib_object_params);
 }
 
 std::string udp_dll_wrapper::get_lib_file_name() const

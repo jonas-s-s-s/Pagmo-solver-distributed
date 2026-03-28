@@ -27,9 +27,9 @@ void run_after_load()
 {
 }
 
-schwefel_udp* allocator()
+schwefel_udp* allocator(const std::any& params)
 {
-    return new schwefel_udp();
+    return new schwefel_udp(params);
 }
 
 void deleter(schwefel_udp* ptr)

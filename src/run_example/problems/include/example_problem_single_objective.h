@@ -60,7 +60,7 @@ private:
 
 extern "C" DLL_PUBLIC void run_after_load();
 
-extern "C" DLL_PUBLIC example_problem_single_objective* allocator();
+extern "C" DLL_PUBLIC example_problem_single_objective* allocator(const std::any& params);
 
 extern "C" DLL_PUBLIC void deleter(example_problem_single_objective* ptr);
 

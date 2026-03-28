@@ -1,6 +1,7 @@
 #pragma once
 #include <iostream>
 #include <memory>
+#include <any>
 
 #include "udp_base.h"
 #include "pagmo/types.hpp"
@@ -52,7 +53,7 @@ public:
     //# OTHER DLL WRAPPER public functions
     //#####################################################################################
 
-    explicit udp_dll_wrapper(const std::string& lib_file_name);
+    explicit udp_dll_wrapper(const std::string& lib_file_name, const std::any& lib_object_params = std::any());
 
     [[nodiscard]] virtual std::string get_lib_file_name() const;
 
@@ -61,6 +62,7 @@ public:
 
     udp_dll_wrapper& operator=(const udp_dll_wrapper& other);
 
+    virtual ~udp_dll_wrapper() = default;
 private:
     //#####################################################################################
     //# BOOST SERIALIZE

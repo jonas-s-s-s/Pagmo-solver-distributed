@@ -43,7 +43,7 @@ void run_after_load()
 {
 }
 
-example_problem_single_objective* allocator()
+example_problem_single_objective* allocator(const std::any& params)
 {
     return new example_problem_single_objective();
 }

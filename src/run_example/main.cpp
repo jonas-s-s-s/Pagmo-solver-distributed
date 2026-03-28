@@ -17,7 +17,8 @@ int main(int argc, char* argv[])
     {
         udp_registry::get().set_local_cache_dir("controller_cache");
 
-        udp_dll_wrapper probWrapper{"schwefel_udp"};
+        unsigned param = 2;
+        udp_dll_wrapper probWrapper{"schwefel_udp", std::any{param}};
         const pagmo::problem prob{probWrapper};
 
         pagmo::algorithm algo{pagmo::gaco(1500)};

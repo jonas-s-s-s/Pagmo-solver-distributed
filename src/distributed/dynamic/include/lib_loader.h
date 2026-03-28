@@ -5,15 +5,21 @@
 #include <string>
 #include <stdexcept>
 #include "defines.h"
-
+#include <any>
 /**
  * - Dynamic library loader providing a POSIX / Win32 interface for loading a C++ dynamic library
+ *
  * - The header should have these functions specified:
- *      - "allocator" returning a pointer to new instance
- *      - "deleter" deleting the object allocated by allocator
+ *      - extern "C" DLL_PUBLIC my_udp* allocator(const std::any& params);
+ *          - returning a pointer to new instance
+ *      - extern "C" DLL_PUBLIC void deleter(my_udp* ptr);
+ *          - deleting the object allocated by allocator
+ *      - extern "C" DLL_PUBLIC my_udp* cloner(const my_udp* other);
+ *          - copy-constructs a new object from the passed pointer
+ *
  * - The following functions are optional:
- *      - "run_after_load" which gets executed during the first call to get_instance or clone_instance
- *      - "cloner" which copy-constructs a new object from the passed pointer
+ *      - extern "C" DLL_PUBLIC void run_after_load();
+ *          - gets executed during the first call to get_instance or clone_instance
  *
  * @tparam T The class contained within this library
  */
@@ -82,11 +88,12 @@ public:
 
     /**
      * Creates an instance of the class contained within this dynamic library
+     * @param params Parameters of the contained object
      * @return Shared pointer to an instance of the class
      */
-    std::shared_ptr<T> get_instance()
+    std::shared_ptr<T> get_instance(const std::any& params = std::any())
     {
-        using allocT = T *(*)();
+        using allocT = T *(*)(const std::any& params);
         using deleteT = void (*)(T*);
 
         auto allocFunc = reinterpret_cast<allocT>(
@@ -105,7 +112,7 @@ public:
         }
 
         return std::shared_ptr<T>(
-            allocFunc(),
+            allocFunc(params),
             [deleteFunc](T* p) { deleteFunc(p); }
         );
     }

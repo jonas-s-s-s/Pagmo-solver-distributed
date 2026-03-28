@@ -44,7 +44,7 @@ void udp_registry::initialize_udp(const std::string& name)
     throw std::runtime_error("Error: cannot initialize udp: " + name + ", this dynamic library was not found.");
 }
 
-std::shared_ptr<udp_base> udp_registry::construct_udp(const std::string& name)
+std::shared_ptr<udp_base> udp_registry::construct_udp(const std::string& name, const std::any& params)
 {
     // Anything calling this needs to first acquire the mutex, without this there could be a race condition on if (_udp_provider)
     std::scoped_lock lock(_registryMutex);
@@ -54,14 +54,14 @@ std::shared_ptr<udp_base> udp_registry::construct_udp(const std::string& name)
     // If this lib is already loaded, simply construct a new object
     if (_lib_loaders.contains(name))
     {
-        return _lib_loaders.at(name).get_instance();
+        return _lib_loaders.at(name).get_instance(params);
     }
 
     // Check if the lib exists in local cache, if yes, load it and return instance
     if (_is_lib_in_cache(name))
     {
         _load_lib(name);
-        return _lib_loaders.at(name).get_instance();
+        return _lib_loaders.at(name).get_instance(params);
     }
 
     // If lib is not loaded or present in cache, try to get it via provider
@@ -74,7 +74,7 @@ std::shared_ptr<udp_base> udp_registry::construct_udp(const std::string& name)
             _save_lib_into_fs(name, libFile.value());
             _load_lib(name);
             // The loader should now be ready to construct an instance
-            return _lib_loaders.at(name).get_instance();
+            return _lib_loaders.at(name).get_instance(params);
         }
     }
 

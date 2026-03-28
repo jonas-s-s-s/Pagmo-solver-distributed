@@ -7,6 +7,7 @@
 #include <queue>
 #include <string>
 #include <unordered_map>
+#include <any>
 
 #include "lib_loader.h"
 #include "lru_cache.h"
@@ -38,9 +39,10 @@ public:
     /**
      * Constructs a UDP, which is contained within some dynamic library
      * @param name Name of the UDP's library
+     * @param params std::any containing a value passed to the UDP's constructor
      * @return Shared ptr pointing to a newly constructed instance of the UDP
      */
-    std::shared_ptr<udp_base> construct_udp(const std::string& name);
+    std::shared_ptr<udp_base> construct_udp(const std::string& name, const std::any& params = std::any());
 
     /**
      * Clones a UDP which was previously created using construct_udp
