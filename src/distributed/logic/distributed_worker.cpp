@@ -76,7 +76,7 @@ void distributed_worker::_single_threaded_worker(pagmo::algorithm& algo, pagmo::
 
     distributed::dealer_socket output{this->_ctx};
     output.set_routing_id("worker_main");
-    output.connect("ipc://thread_socket");
+    output.connect("inproc://thread_socket");
 
     LOG(TRACE) << "Running algorithm: " << algo.get_name() << std::endl;
     const pagmo::population new_pop = algo.evolve(pop);
@@ -107,7 +107,7 @@ void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo, pagmo
     // 1) Set up socket for communicating with the parent thread
     distributed::dealer_socket output{this->_ctx};
     output.set_routing_id("worker_main");
-    output.connect("ipc://thread_socket");
+    output.connect("inproc://thread_socket");
 
     // 2) Get island count based on hardware core count
     const unsigned islandCount = _compute_optimal_island_count();
@@ -191,7 +191,7 @@ distributed_worker::distributed_worker(const std::string& controllerAddress, con
                 });
 
     // Thread socket always listens on this address
-    _threadSocket.bind("ipc://thread_socket");
+    _threadSocket.bind("inproc://thread_socket");
 
     // Configure the worker socket so it can communicate with the controller
     _workerId = "worker_" + uuid::v4::UUID::New().String();
@@ -245,7 +245,7 @@ std::optional<std::vector<std::byte>> distributed_worker::get_dll_from_controlle
 
     distributed::dealer_socket socket{this->_ctx};
     socket.set_routing_id(myId);
-    socket.connect("ipc://thread_socket");
+    socket.connect("inproc://thread_socket");
 
     // 1) Send the request
     socket.send(MsgType::GET_DLL, get_dll_request{lib_name});
