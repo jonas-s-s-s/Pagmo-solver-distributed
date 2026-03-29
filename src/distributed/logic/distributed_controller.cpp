@@ -186,6 +186,11 @@ distributed_controller::~distributed_controller()
 {
     if (_serverThread.joinable())
     {
+        // This should shut down the poller and its thread
+        _workersSocket.get_socket().close();
+        _islandsSocket.get_socket().close();
+        _ctx.shutdown();
+
         _serverThread.join();
     }
 }
