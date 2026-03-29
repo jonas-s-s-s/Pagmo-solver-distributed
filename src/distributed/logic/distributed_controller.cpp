@@ -175,10 +175,18 @@ void distributed_controller::run_server()
 {
     _serverThread = std::thread([this]
     {
-        for (;;)
+        try
         {
-            _poller.wait(std::chrono::milliseconds{-1});
+            for (;;)
+            {
+                _poller.wait(std::chrono::milliseconds{-1});
+            }
+        } catch (...)
+        {
+            // poller throws an exception if it's interrupted, see destructor, this way we can shut down the thread
+            return;
         }
+
     });
 }
 
