@@ -18,8 +18,8 @@ static Serializable vector_deserialize(const std::vector<std::byte>& binary)
     vector_istreambuf buf(binary);
     std::istream is(&buf);
 
-    // TODO: binary_oarchive is not portable??
-    boost::archive::binary_iarchive ia(is);
+    // Changed from binary archive to achieve better compatibility
+    boost::archive::text_iarchive ia(is);
     Serializable obj{};
     ia >> obj;
 

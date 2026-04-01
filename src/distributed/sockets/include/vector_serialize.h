@@ -16,8 +16,8 @@ static std::vector<std::byte> vector_serialize(const Serializable& payload)
     vector_streambuf buf(serialized);
     std::ostream os(&buf);
 
-    // TODO: binary_oarchive is not portable??
-    boost::archive::binary_oarchive oa(os);
+    // Changed from binary archive to achieve better compatibility
+    boost::archive::text_oarchive oa(os);
     oa << payload;
     os.flush();
 
