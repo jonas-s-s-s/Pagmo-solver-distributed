@@ -22,3 +22,8 @@ bool hash_cache::has_file(const std::string& name) const
 {
     return _lruCache.contains(name);
 }
+
+void hash_cache::erase(const std::string& name)
+{
+    _lruCache.erase(name);
+}

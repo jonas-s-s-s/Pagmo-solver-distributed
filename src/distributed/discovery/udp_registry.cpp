@@ -9,13 +9,37 @@
 //# Public member functions
 //#####################################################################################
 
-void udp_registry::initialize_udp(const std::string& name)
+void udp_registry::initialize_udp(const std::string& name, const std::optional<std::string>& libFileHash)
 {
     std::scoped_lock lock(_registryMutex);
 
     LOG(TRACE) << "initializing udp library: " << name << std::endl;
 
-    // If this lib is already loaded, do nothing
+    // If a file hash was provided, we need to check if we have the same file version
+    // (udp_dll_wrapper calls this each time it deserializes itself - i.e. each time worker receives data)
+    if (libFileHash.has_value())
+    {
+        // This function uses get_lib_as_file() to get the file and then compute hash,
+        // which means that it'll first try to get it from a local cache, and only then
+        // request the file from the controller
+        const auto hash = get_lib_file_hash(libFileHash.value());
+        if (!hash.has_value())
+        {
+            // This should not happen - if controller sent us this file name, it should have the file ready
+            throw std::runtime_error("Error: cannot initialize udp: " + name + ", this dynamic library was not found.");
+            // TODO: This is possibly inefficient, because if the files don't match, we fetch the new one from controller twice?
+        }
+
+        if (hash != libFileHash.value())
+        {
+            // If we reach this branch, it means the lib file we have locally is outdated
+            // We need to unload it (if it's loaded) and then delete it from cache and local FS
+            _unload_lib(name);
+            _delete_lib_file(name);
+        }
+    }
+
+    // If this lib is already loaded in this process, do nothing
     if (_lib_loaders.contains(name))
     {
         return;
@@ -187,7 +211,6 @@ std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::s
             " Proceeding as if it doesn't exist." << std::endl;
         return std::nullopt;
     }
-
 }
 
 std::optional<std::string> udp_registry::get_lib_file_hash(const std::string& libName)
@@ -250,4 +273,71 @@ bool udp_registry::_is_lib_in_cache(const std::string& libName) const
 std::filesystem::path udp_registry::_get_lib_path(const std::string& libName) const
 {
     return _local_cache / std::string{libName + portable_dll_extension()};
+}
+
+void udp_registry::_unload_lib(const std::string& libName)
+{
+    LOG(TRACE) << "udp_registry unloading lib: " << libName << std::endl;
+
+    if (!_lib_loaders.contains(libName))
+        return;
+
+    try
+    {
+        _lib_loaders.at(libName).close_lib();
+    }
+    catch (const std::exception& e)
+    {
+        LOG(ERROR) << "Error: failed to unload lib: " << libName << " Err msg: " << e.what() << std::endl;
+        throw;
+    }
+    catch (...)
+    {
+        LOG(ERROR) << "Error: unknown failure unloading lib: " << libName << std::endl;
+        throw;
+    }
+
+    _lib_loaders.erase(libName);
+}
+
+void udp_registry::_delete_lib_file(const std::string& libName)
+{
+    LOG(TRACE) << "udp_registry deleting lib file: " << libName << std::endl;
+
+    const std::filesystem::path libPath = _get_lib_path(libName);
+
+    // Remove from in-memory cache
+    if (_use_in_memory_cache)
+    {
+        _libFilesBuffer.erase(libPath.string());
+    }
+
+    // Remove from hash cache
+    if (_hash_cache.has_file(libName))
+    {
+        _hash_cache.erase(libName);
+    }
+
+    // Remove from fs
+    try
+    {
+        if (std::filesystem::exists(libPath))
+        {
+            if (!std::filesystem::remove(libPath))
+            {
+                LOG(ERROR) << "Error: failed to delete file: " << libPath << std::endl;
+                throw std::runtime_error("Failed to delete file: " + libPath.string());
+            }
+        }
+    }
+    catch (const std::exception& e)
+    {
+        LOG(ERROR) << "Error: exception deleting file: " << libPath << " Err msg: " << e.what() << std::endl;
+        throw;
+    }
+    catch (...)
+    {
+        LOG(ERROR) << "Error: unknown exception deleting file: " << libPath << std::endl;
+        throw;
+    }
 }

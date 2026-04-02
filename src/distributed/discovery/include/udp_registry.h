@@ -34,8 +34,9 @@ public:
     /**
      * Loads the dynamic library without constructing any object
      * @param name Name of the UDP's library
+     * @param libFileHash
      */
-    void initialize_udp(const std::string& name);
+    void initialize_udp(const std::string& name, const std::optional<std::string>& libFileHash);
 
     /**
      * Constructs a UDP, which is contained within some dynamic library
@@ -97,6 +98,16 @@ private:
      * Returns a full path to a library file located in local cache (including extension)
      */
     std::filesystem::path _get_lib_path(const std::string& libName) const;
+
+    /**
+     * Unloads this library from the address space of this process
+     */
+    void _unload_lib(const std::string& libName);
+
+    /**
+     * Deletes the library from local fs, in-memory cache and from hash cache
+     */
+    void _delete_lib_file(const std::string& libName);
 
     udp_registry() = default;
 

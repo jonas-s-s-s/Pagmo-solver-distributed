@@ -37,4 +37,10 @@ public:
      * @return true if hash is in cache
      */
     bool has_file(const std::string& name) const;
+
+    /**
+     * Erases hash from cache
+     * @param name Name of the file (or path)
+     */
+    void erase(const std::string& name);
 };

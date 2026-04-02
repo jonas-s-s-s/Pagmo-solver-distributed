@@ -20,6 +20,9 @@ class udp_dll_wrapper
 
     std::string _libFileName;
 
+    // This exists so worker can see if it has the same version of this file or no
+    // Assigned value only in the "save" (serialization) function, as we don't use it anywhere else
+    std::string _libFileHash;
 public:
     //#####################################################################################
     //# PAGMO UDP public functions
@@ -73,7 +76,11 @@ private:
     template <typename Archive>
     void save(Archive& ar, unsigned) const
     {
-        pagmo::detail::to_archive(ar, _libFileName, _udpPtr);
+        const auto hash = udp_registry::get().get_lib_file_hash(_libFileName);
+        // Put it into a temporary var, we can't modify the field itself because this function is const
+        const std::string libFileHash = hash.has_value() ? hash.value() : _libFileHash;
+
+        pagmo::detail::to_archive(ar, libFileHash, _libFileName, _udpPtr);
         LOG(TRACE) << "udp_dll_wrapper successfully saved" << std::endl;
     }
 
@@ -81,11 +88,14 @@ private:
     void load(Archive& ar, unsigned)
     {
         try
-        {
-            // 1) Deserialize _libFileName first
+            {
+            // 1) Deserialize _libFileHash and _libFileName first
+            ar >> _libFileHash;
             ar >> _libFileName;
+
             // 2) Attempt to load the dynamic library of this UDP
-            udp_registry::get().initialize_udp(_libFileName);
+            udp_registry::get().initialize_udp(_libFileName, _libFileHash);
+
             // 3) Deserialize UDP, lib containing the UDP class should now be available in the address space of this process
             ar >> _udpPtr;
 

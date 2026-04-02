@@ -62,6 +62,16 @@ public:
         _items_map[key] = _items.begin();
     }
 
+    void erase(const std::string& key)
+    {
+        auto it = _items_map.find(key);
+        if (it == _items_map.end())
+            return;
+
+        _items.erase(it->second);
+        _items_map.erase(it);
+    }
+
     void clear()
     {
         _items.clear();
