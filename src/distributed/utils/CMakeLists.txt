@@ -1,2 +1,2 @@
-add_library(distributed_utils INTERFACE)
-target_include_directories(distributed_utils INTERFACE include)
+add_library(distributed_utils sha256.cpp)
+target_include_directories(distributed_utils PUBLIC include)

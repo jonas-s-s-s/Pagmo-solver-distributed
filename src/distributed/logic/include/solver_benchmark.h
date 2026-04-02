@@ -2,7 +2,13 @@
 #include "population_tools.h"
 #include "pagmo/problem.hpp"
 #include "pagmo/utils/hypervolume.hpp"
+#include <chrono>
 
+/**
+ * Class for benchmarking various algorithms or solvers.
+ * Usage is simple, first call start_timer(), then perform your calculation, call stop_timer() and then finally add_result().
+ * get_benchmark_stats_csv() outputs a table comparing different "results" in each row.
+ */
 class solver_benchmark
 {
     pagmo::problem _problem;
