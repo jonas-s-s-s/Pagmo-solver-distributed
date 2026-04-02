@@ -10,7 +10,7 @@
  * Any part of the application can use this to abstract boost-specific code.
  */
 template <typename Serializable>
-static Serializable vector_deserialize(const std::vector<std::byte>& binary)
+Serializable vector_deserialize(const std::vector<std::byte>& binary)
 {
     if (binary.empty())
         throw std::runtime_error("Error: Attempted to deserialize an empty buffer");

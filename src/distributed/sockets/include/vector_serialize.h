@@ -10,7 +10,7 @@
  * Defined only here, any changes will affect serialization of all sockets.
  */
 template <typename Serializable>
-static std::vector<std::byte> vector_serialize(const Serializable& payload)
+std::vector<std::byte> vector_serialize(const Serializable& payload)
 {
     std::vector<std::byte> serialized;
     vector_streambuf buf(serialized);
