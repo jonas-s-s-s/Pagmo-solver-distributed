@@ -1,4 +1,4 @@
-add_library(distributed_discovery udp_registry.cpp udp_dll_wrapper.cpp)
+add_library(distributed_discovery udp_registry.cpp udp_dll_wrapper.cpp hash_cache.cpp)
 
 target_include_directories(distributed_discovery PUBLIC include)
 

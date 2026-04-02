@@ -101,8 +101,10 @@ private:
 
             LOG(TRACE) << "udp_dll_wrapper successfully loaded" << std::endl;
         }
-        catch (...)
+        catch (const std::exception& e)
         {
+            std::cerr << e.what() << std::endl;
+
             *this = udp_dll_wrapper{};
             throw;
         }

@@ -70,7 +70,8 @@ public:
 
     std::optional<std::string> get_lib_file_hash(const std::string& libName);
 private:
-    std::mutex _registryMutex{};
+    // Recursive so public functions can call each other (one thread can lock it multiple times)
+    std::recursive_mutex  _registryMutex{};
 
     // Where to store or look for DLL files
     std::filesystem::path _local_cache = ".";

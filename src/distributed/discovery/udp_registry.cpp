@@ -22,7 +22,7 @@ void udp_registry::initialize_udp(const std::string& name, const std::optional<s
         // This function uses get_lib_as_file() to get the file and then compute hash,
         // which means that it'll first try to get it from a local cache, and only then
         // request the file from the controller
-        const auto hash = get_lib_file_hash(libFileHash.value());
+        const auto hash = get_lib_file_hash(name);
         if (!hash.has_value())
         {
             // This should not happen - if controller sent us this file name, it should have the file ready
