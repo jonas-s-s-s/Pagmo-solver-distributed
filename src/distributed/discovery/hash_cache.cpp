@@ -1,10 +1,11 @@
 #include "hash_cache.h"
 
-void hash_cache::hash_file(const std::string& name, const std::vector<std::byte>& file)
+std::string hash_cache::hash_file(const std::string& name, const std::vector<std::byte>& file)
 {
     SHA256 sha256;
     const std::string hash = sha256(file.data(), file.size());
     _lruCache.put(name, hash);
+    return hash;
 }
 
 std::optional<std::string> hash_cache::get_file_hash(const std::string& name)

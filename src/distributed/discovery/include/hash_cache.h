@@ -20,8 +20,9 @@ public:
      * Adds a file's hash to the cache
      * @param name Name of the file (or path)
      * @param file Bytes of the file
+     * @return hash of the file
      */
-    void hash_file(const std::string& name, const std::vector<std::byte>& file);
+    std::string hash_file(const std::string& name, const std::vector<std::byte>& file);
 
     /**
      * Gets a cached hash, or std::nullopt if it doesn't exist

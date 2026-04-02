@@ -161,7 +161,7 @@ std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::s
         }
 
         fStream.seekg(0, std::ios::end);
-        std::size_t size = fStream.tellg();
+        const std::size_t size = fStream.tellg();
         fStream.seekg(0, std::ios::beg);
 
         std::vector<std::byte> fileContent(size);
@@ -190,6 +190,26 @@ std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::s
 
 }
 
+std::optional<std::string> udp_registry::get_lib_file_hash(const std::string& libName)
+{
+    const auto file = get_lib_as_file(libName);
+
+    // Return nullopt if lib file doesn't exist
+    if (!file.has_value())
+    {
+        return std::nullopt;
+    }
+
+    // Use cached value if possible
+    if (_hash_cache.has_file(libName))
+    {
+        return _hash_cache.get_file_hash(libName);
+    }
+
+    // Compute hash and return it
+    return _hash_cache.hash_file(libName, file.value());
+}
+
 //#####################################################################################
 //# Private member functions
 //#####################################################################################
@@ -200,7 +220,7 @@ void udp_registry::_save_lib_into_fs(const std::string& libName, const std::vect
 
     const std::filesystem::path libPath = _get_lib_path(libName);
 
-    // We're assuming the parent directory exists
+    // We're assuming the higher level directories exist
     if (!std::filesystem::exists(_local_cache))
         std::filesystem::create_directory(_local_cache);
 

@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <any>
 
+#include "hash_cache.h"
 #include "lib_loader.h"
 #include "lru_cache.h"
 #include "udp_base.h"
@@ -66,6 +67,7 @@ public:
 
     std::optional<std::vector<std::byte>> get_lib_as_file(const std::string& libName);
 
+    std::optional<std::string> get_lib_file_hash(const std::string& libName);
 private:
     std::mutex _registryMutex{};
 
@@ -81,6 +83,9 @@ private:
 
     // Lambda which returns the DLL / shared library file as an array of bytes
     udp_provider _udp_provider{};
+
+    // Cache for the get_lib_file_hash() function, this prevents repeated re-computing of hashes
+    hash_cache _hash_cache{};
 
     void _save_lib_into_fs(const std::string& libName, const std::vector<std::byte>& libFile);
 
