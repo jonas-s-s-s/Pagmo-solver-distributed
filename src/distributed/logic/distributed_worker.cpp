@@ -176,6 +176,14 @@ distributed_worker::distributed_worker(const std::string& controllerAddress, con
     _workerMode(workerMode),
     _archipelagoEvolutionCount(archipelagoEvolutionCount)
 {
+    // Set ping interval and ping timeout for the worker->controller socket
+    _workerSocket.get_socket().set(zmq::sockopt::heartbeat_ivl, HEARTBEAT_INTERVAL);
+    _workerSocket.get_socket().set(zmq::sockopt::heartbeat_timeout, HEARTBEAT_TIMEOUT);
+
+    // Set hello message for controller (will be sent to controller every time worker connects or reconnects)
+    int connectMsg = static_cast<int>(MsgType::WORKER_JOIN);
+    _workerSocket.get_socket().set(zmq::sockopt::hello_msg, zmq::buffer(&connectMsg, sizeof(connectMsg)));
+
     // Poller callback - worker socket has message
     _poller.add(_workerSocket.get_socket(), zmq::event_flags::pollin,
                 [this](zmq::event_flags e)
@@ -201,13 +209,6 @@ distributed_worker::distributed_worker(const std::string& controllerAddress, con
 
 void distributed_worker::client_loop()
 {
-    if (_firstRun)
-    {
-        // Send out initial message to controller
-        _workerSocket.send(MsgType::WORKER_JOIN);
-        _firstRun = false;
-    }
-
     // -1 means no poller timeout
     _poller.wait(std::chrono::milliseconds{-1});
 }
@@ -216,17 +217,14 @@ void distributed_worker::run_client()
 {
     _clientThread = std::thread([this]
     {
-        // Send out initial message to controller
-        _workerSocket.send(MsgType::WORKER_JOIN);
-        _firstRun = false;
-
         try
         {
             for (;;)
             {
                 _poller.wait(std::chrono::milliseconds{-1});
             }
-        } catch (...)
+        }
+        catch (...)
         {
             // poller throws an exception if it's interrupted, see destructor, this way we can shut down the thread
             return;

@@ -1,10 +1,11 @@
 #include "router_socket.h"
 
-distributed::router_socket::router_socket(zmq::context_t& ctx): server_socket(ctx, zmq::socket_type::router)
-{}
+distributed::router_socket::router_socket(zmq::context_t& ctx) : server_socket(ctx, zmq::socket_type::router)
+{
+}
 
 void distributed::router_socket::send(const std::string& receiverId, const MsgType type,
-    const std::vector<std::byte>& serialized)
+                                      const std::vector<std::byte>& serialized)
 {
     const int typeInt = static_cast<int>(type);
     _socket.send(zmq::buffer(receiverId), zmq::send_flags::sndmore);
@@ -21,17 +22,26 @@ std::tuple<std::string, MsgType, std::vector<std::byte>> distributed::router_soc
     // No-discard
     const auto r0 = _socket.recv(identity);
     const auto r1 = _socket.recv(typeMsg);
-    const auto r2 = _socket.recv(payloadMsg);
 
     // Identification of the message
     int type;
     std::memcpy(&type, typeMsg.data(), sizeof(type));
+    MsgType msgType = static_cast<MsgType>(type);
 
-    // The serialized message object
-    std::vector payloadBinary(
-        static_cast<std::byte*>(payloadMsg.data()),
-        static_cast<std::byte*>(payloadMsg.data()) + payloadMsg.size()
-    );
+    // We have to add a special case for the ZeroMQ hello / disconnect messages.
+    // These messages cannot be multipart, so they cannot follow our protocol.
+    if (msgType != MsgType::WORKER_JOIN && msgType != MsgType::WORKER_LEAVE)
+    {
+        const auto r2 = _socket.recv(payloadMsg);
 
-    return {identity.to_string(), static_cast<MsgType>(type), payloadBinary};
+        // The message payload
+        std::vector payloadBinary(
+            static_cast<std::byte*>(payloadMsg.data()),
+            static_cast<std::byte*>(payloadMsg.data()) + payloadMsg.size()
+        );
+
+        return {identity.to_string(), msgType, payloadBinary};
+    }
+
+    return {identity.to_string(), msgType, {}};
 }

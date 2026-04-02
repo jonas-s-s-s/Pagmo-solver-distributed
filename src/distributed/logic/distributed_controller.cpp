@@ -20,6 +20,10 @@ void distributed_controller::_handle_Workers_Socket_Msg()
     switch (type)
     {
     case MsgType::WORKER_JOIN:
+        // Do nothing if we already have the worker saved as "joined"
+        if (_freeWorkersPool.contains(workerId))
+            break;
+
         LOG(TRACE) << "Worker " << workerId << " joined" << std::endl;
         _add_free_worker(workerId);
         _workerInfoRepository.add_worker_record(workerId, {});
@@ -28,7 +32,6 @@ void distributed_controller::_handle_Workers_Socket_Msg()
 
     case MsgType::WORKER_LEAVE:
 
-        // TODO: Worker keepalive?
         _freeWorkersPool.erase(workerId);
         _workerInfoRepository.remove_worker_record(workerId);
         // TODO: Handle busy worker leave - push back into islandsWaitingForAlloc?
@@ -61,7 +64,8 @@ void distributed_controller::_handle_Workers_Socket_Msg()
         break;
 
     default:
-        LOG(WARNING) << "WARNING: " << workerId << " sent unhandled message type: " << static_cast<int>(type) << std::endl;
+        LOG(WARNING) << "WARNING: " << workerId << " sent unhandled message type: " << static_cast<int>(type) <<
+            std::endl;
     }
 }
 
@@ -90,7 +94,8 @@ void distributed_controller::_handle_Islands_Socket_Msg()
         }
         break;
     default:
-        LOG(WARNING) << "WARNING: " << islandId << " sent unhandled message type: " << static_cast<int>(type) << std::endl;
+        LOG(WARNING) << "WARNING: " << islandId << " sent unhandled message type: " << static_cast<int>(type) <<
+            std::endl;
     }
 }
 
@@ -143,6 +148,14 @@ void distributed_controller::_add_free_worker(const std::string& workerId)
 distributed_controller::distributed_controller(const std::string& controllerAddress) : _workersSocket{_ctx},
     _islandsSocket{_ctx}
 {
+    // Set ping interval and ping timeout for the controller->workers socket
+    _workersSocket.get_socket().set(zmq::sockopt::heartbeat_ivl, HEARTBEAT_INTERVAL);
+    _workersSocket.get_socket().set(zmq::sockopt::heartbeat_timeout, HEARTBEAT_TIMEOUT);
+
+    // Set disconnect message for workers (will be sent to us if worker is disconnected)
+    int disconnectMsg = static_cast<int>(MsgType::WORKER_LEAVE);
+    _workersSocket.get_socket().set(zmq::sockopt::disconnect_msg, zmq::buffer(&disconnectMsg, sizeof(disconnectMsg)));
+
     _poller.add(_workersSocket.get_socket(), zmq::event_flags::pollin,
                 [this](zmq::event_flags e)
                 {
@@ -181,12 +194,12 @@ void distributed_controller::run_server()
             {
                 _poller.wait(std::chrono::milliseconds{-1});
             }
-        } catch (...)
+        }
+        catch (...)
         {
             // poller throws an exception if it's interrupted, see destructor, this way we can shut down the thread
             return;
         }
-
     });
 }
 

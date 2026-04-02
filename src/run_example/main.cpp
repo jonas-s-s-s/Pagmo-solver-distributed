@@ -4,6 +4,7 @@
 #include "distributed_worker.h"
 #include "udp_dll_wrapper.h"
 #include "udp_registry.h"
+#include "pagmo/algorithms/de.hpp"
 #include "pagmo/algorithms/gaco.hpp"
 
 
@@ -21,12 +22,19 @@ int main(int argc, char* argv[])
         udp_dll_wrapper probWrapper{"schwefel_udp", std::any{param}};
         const pagmo::problem prob{probWrapper};
 
-        pagmo::algorithm algo{pagmo::gaco(1500)};
+        pagmo::algorithm algo{pagmo::de(1500)};
         algo.set_verbosity(0);
 
         distributed_solver ds{address};
         ds.evolve(prob, {algo}, 100);
         ds.wait_until_completion();
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+
+        ds.evolve(prob, {algo}, 100);
+        ds.wait_until_completion();
+
+        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     }
     else
     {

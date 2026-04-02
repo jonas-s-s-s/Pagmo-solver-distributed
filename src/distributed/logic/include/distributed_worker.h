@@ -14,12 +14,17 @@
 
 class distributed_worker
 {
+    // Interval between which the socket sends ping messages
+    static constexpr int HEARTBEAT_INTERVAL = 1000;
+    // Peer is considered dead if no ping is received after this interval
+    static constexpr int HEARTBEAT_TIMEOUT = 3000;
+
     zmq::context_t _ctx;
     distributed::dealer_socket _workerSocket;
 
     std::string _workerId;
 
-    // With this we can check multiple sockets for events in a callback-style syntax
+    // With this we can check multiple sockets for message recv events in a callback-style syntax
     zmq::active_poller_t _poller;
 
     // Work-related code should run on this thread, so we don't block the client message loop
@@ -62,8 +67,6 @@ class distributed_worker
 
     unsigned _archipelagoEvolutionCount;
 
-    // Helper for the client_loop() function
-    bool _firstRun = true;
 public:
     /**
      * Constructs a distributed worker, which will connect and accept work from a specified controller
@@ -72,7 +75,7 @@ public:
      * @param archipelagoEvolutionCount How many times to run the archipelago evolution (when using ARCHIPELAGO_BASED)
      */
     explicit distributed_worker(const std::string& controllerAddress,
-                                worker_mode workerMode = SINGLE_THREADED, //TODO: CHANGE
+                                worker_mode workerMode = ARCHIPELAGO_BASED, //TODO: CHANGE
                                 unsigned archipelagoEvolutionCount = 1); //TODO: CHANGE
 
     void client_loop();

@@ -9,6 +9,11 @@
 
 class distributed_controller
 {
+    // Interval between which the socket sends ping messages
+    static constexpr int HEARTBEAT_INTERVAL = 1000;
+    // Peer is considered dead if no ping is received after this interval
+    static constexpr int HEARTBEAT_TIMEOUT = 3000;
+
     zmq::context_t _ctx;
     zmq::active_poller_t _poller;
 
