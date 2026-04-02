@@ -27,7 +27,6 @@ void udp_registry::initialize_udp(const std::string& name, const std::optional<s
         {
             // This should not happen - if controller sent us this file name, it should have the file ready
             throw std::runtime_error("Error: cannot initialize udp: " + name + ", this dynamic library was not found.");
-            // TODO: This is possibly inefficient, because if the files don't match, we fetch the new one from controller twice?
         }
 
         if (hash != libFileHash.value())
@@ -162,7 +161,15 @@ std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::s
         // If the file doesn't exist locally, we can try using udp provider
         if (_udp_provider)
         {
-            return _udp_provider(libName);
+            const auto libFile = _udp_provider(libName);
+
+            // Save it into the fs too to prevent repeated fetching from controller
+            if (libFile.has_value())
+            {
+                _save_lib_into_fs(libName, libFile.value());
+            }
+
+            return libFile;
         }
         return std::nullopt;
     }
@@ -277,10 +284,10 @@ std::filesystem::path udp_registry::_get_lib_path(const std::string& libName) co
 
 void udp_registry::_unload_lib(const std::string& libName)
 {
-    LOG(TRACE) << "udp_registry unloading lib: " << libName << std::endl;
-
     if (!_lib_loaders.contains(libName))
         return;
+
+    LOG(TRACE) << "udp_registry unloading lib: " << libName << std::endl;
 
     try
     {
