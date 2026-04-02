@@ -220,9 +220,16 @@ void distributed_worker::run_client()
         _workerSocket.send(MsgType::WORKER_JOIN);
         _firstRun = false;
 
-        for (;;)
+        try
         {
-            _poller.wait(std::chrono::milliseconds{-1});
+            for (;;)
+            {
+                _poller.wait(std::chrono::milliseconds{-1});
+            }
+        } catch (...)
+        {
+            // poller throws an exception if it's interrupted, see destructor, this way we can shut down the thread
+            return;
         }
     });
 }
@@ -231,6 +238,10 @@ distributed_worker::~distributed_worker()
 {
     if (_clientThread.joinable())
     {
+        _workerSocket.get_socket().close();
+        _threadSocket.get_socket().close();
+        _ctx.shutdown();
+
         _clientThread.join();
     }
 }
