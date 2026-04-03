@@ -170,15 +170,24 @@ void distributed_worker::_start_worker_thread(const std::vector<std::byte>& work
 //#####################################################################################
 
 distributed_worker::distributed_worker(const std::string& controllerAddress, const worker_mode workerMode,
-                                       const unsigned archipelagoEvolutionCount) :
+                                       const unsigned archipelagoEvolutionCount, const int heartbeatInterval,
+                                       const int heartbeatTimeout,
+                                       const int reconnectIvlMax) :
+    _heartbeat_interval(heartbeatInterval),
+    _heartbeat_timeout(heartbeatTimeout),
+    _reconnect_ivl_max(reconnectIvlMax),
     _workerSocket(_ctx),
     _threadSocket(_ctx),
     _workerMode(workerMode),
     _archipelagoEvolutionCount(archipelagoEvolutionCount)
 {
     // Set ping interval and ping timeout for the worker->controller socket
-    _workerSocket.get_socket().set(zmq::sockopt::heartbeat_ivl, HEARTBEAT_INTERVAL);
-    _workerSocket.get_socket().set(zmq::sockopt::heartbeat_timeout, HEARTBEAT_TIMEOUT);
+    _workerSocket.get_socket().set(zmq::sockopt::heartbeat_ivl, _heartbeat_interval);
+    _workerSocket.get_socket().set(zmq::sockopt::heartbeat_timeout, _heartbeat_timeout);
+
+    // Set maximal SYN packet intervals (for when controller is not reachable) exponentially increases to this value
+    _workerSocket.get_socket().set(zmq::sockopt::reconnect_ivl_max, _reconnect_ivl_max);
+
 
     // Set hello message for controller (will be sent to controller every time worker connects or reconnects)
     int connectMsg = static_cast<int>(MsgType::WORKER_JOIN);

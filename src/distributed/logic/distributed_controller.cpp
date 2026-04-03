@@ -145,12 +145,21 @@ void distributed_controller::_add_free_worker(const std::string& workerId)
 //# Sockets setup & initialization
 //#####################################################################################
 
-distributed_controller::distributed_controller(const std::string& controllerAddress) : _workersSocket{_ctx},
-    _islandsSocket{_ctx}
+distributed_controller::distributed_controller(const std::string& controllerAddress,
+                                               int heartbeatInterval,
+                                               int heartbeatTimeout,
+                                               int reconnectIvlMax) : _heartbeat_interval(heartbeatInterval),
+                                                                      _heartbeat_timeout(heartbeatTimeout),
+                                                                      _reconnect_ivl_max(reconnectIvlMax),
+                                                                      _workersSocket{_ctx},
+                                                                      _islandsSocket{_ctx}
 {
     // Set ping interval and ping timeout for the controller->workers socket
-    _workersSocket.get_socket().set(zmq::sockopt::heartbeat_ivl, HEARTBEAT_INTERVAL);
-    _workersSocket.get_socket().set(zmq::sockopt::heartbeat_timeout, HEARTBEAT_TIMEOUT);
+    _workersSocket.get_socket().set(zmq::sockopt::heartbeat_ivl, _heartbeat_interval);
+    _workersSocket.get_socket().set(zmq::sockopt::heartbeat_timeout, _heartbeat_timeout);
+
+    // TCP SYN max interval
+    _workersSocket.get_socket().set(zmq::sockopt::reconnect_ivl_max, _reconnect_ivl_max);
 
     // Set disconnect message for workers (will be sent to us if worker is disconnected)
     int disconnectMsg = static_cast<int>(MsgType::WORKER_LEAVE);

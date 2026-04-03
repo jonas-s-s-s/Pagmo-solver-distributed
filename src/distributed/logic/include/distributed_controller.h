@@ -10,9 +10,11 @@
 class distributed_controller
 {
     // Interval between which the socket sends ping messages
-    static constexpr int HEARTBEAT_INTERVAL = 1000;
+    int _heartbeat_interval = 1000;
     // Peer is considered dead if no ping is received after this interval
-    static constexpr int HEARTBEAT_TIMEOUT = 3000;
+    int _heartbeat_timeout = 3000;
+    // Maximal SYN packet interval (for when controller is not reachable) exponentially increases to this value
+    int _reconnect_ivl_max = 10000;
 
     zmq::context_t _ctx;
     zmq::active_poller_t _poller;
@@ -39,7 +41,10 @@ class distributed_controller
     std::tuple<std::string, std::vector<std::byte>> _pop_waiting_island();
 
 public:
-    explicit distributed_controller(const std::string& controllerAddress);
+    explicit distributed_controller(const std::string& controllerAddress,
+                                    int heartbeatInterval = 1000,
+                                    int heartbeatTimeout = 3000,
+                                    int reconnectIvlMax = 1000);
 
     void run_server();
 

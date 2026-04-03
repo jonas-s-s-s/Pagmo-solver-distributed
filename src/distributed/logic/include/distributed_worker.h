@@ -15,9 +15,11 @@
 class distributed_worker
 {
     // Interval between which the socket sends ping messages
-    static constexpr int HEARTBEAT_INTERVAL = 1000;
+    int _heartbeat_interval = 1000;
     // Peer is considered dead if no ping is received after this interval
-    static constexpr int HEARTBEAT_TIMEOUT = 3000;
+    int _heartbeat_timeout = 3000;
+    // Maximal SYN packet interval (for when controller is not reachable) exponentially increases to this value
+    int _reconnect_ivl_max = 10000;
 
     zmq::context_t _ctx;
     distributed::dealer_socket _workerSocket;
@@ -73,10 +75,17 @@ public:
      * @param controllerAddress Controller's address
      * @param workerMode Can be either SINGLE_THREADED or ARCHIPELAGO_BASED (default)
      * @param archipelagoEvolutionCount How many times to run the archipelago evolution (when using ARCHIPELAGO_BASED)
+     * @param heartbeatInterval Interval between which the socket sends ping messages
+     * @param heartbeatTimeout Peer is considered dead if no ping is received after this interval
+     * @param reconnectIvlMax Maximal SYN packet interval (exponentially increases to this value)
      */
     explicit distributed_worker(const std::string& controllerAddress,
                                 worker_mode workerMode = ARCHIPELAGO_BASED, //TODO: CHANGE
-                                unsigned archipelagoEvolutionCount = 1); //TODO: CHANGE
+                                unsigned archipelagoEvolutionCount = 1, //TODO: CHANGE
+                                int heartbeatInterval = 1000,
+                                int heartbeatTimeout = 3000,
+                                int reconnectIvlMax = 10000
+                                );
 
     void client_loop();
     void run_client();
