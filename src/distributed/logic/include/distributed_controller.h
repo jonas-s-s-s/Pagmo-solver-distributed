@@ -7,6 +7,17 @@
 #include "zmq.hpp"
 #include "zmq_addon.hpp"
 
+/**
+ * A helper struct, used to keep track of which worker is allocated which island's work,
+ * so we can re-allocate in case the worker disconnects or fails.
+ */
+struct work_allocation_record
+{
+    std::string islandId;
+    std::vector<std::byte> workData;
+};
+
+
 class distributed_controller
 {
     // Interval between which the socket sends ping messages
@@ -30,12 +41,14 @@ class distributed_controller
     std::unordered_map<std::string, std::vector<std::byte>> _islandsWaitingForAlloc{};
     // Worker nodes ready to be allocated to an island
     std::unordered_set<std::string> _freeWorkersPool{};
-    // Pairs of {workerID, islandID} indicate which worker is currently being used by which island
-    std::unordered_map<std::string, std::string> _workAllocationMap{};
+    // Pairs of {workerID, work record} indicate which worker is currently being used by which island
+    std::unordered_map<std::string, work_allocation_record> _workAllocationMap{};
 
     void _add_free_worker(const std::string& workerId);
     void _handle_Workers_Socket_Msg();
     void _handle_Islands_Socket_Msg();
+
+    void _allocate_island_work(std::string islandId, std::vector<std::byte> binary);
 
     void _allocate_worker_to_island(const std::string& islandId, const std::vector<std::byte>& workData);
     std::tuple<std::string, std::vector<std::byte>> _pop_waiting_island();

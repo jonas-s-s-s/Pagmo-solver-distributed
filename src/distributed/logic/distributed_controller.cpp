@@ -5,7 +5,7 @@
 
 #include "vector_deserialize.h"
 #include "vector_istreambuf.h"
-#include "../discovery/include/udp_registry.h"
+#include "udp_registry.h"
 
 //#####################################################################################
 //# Handling of socket messages
@@ -31,18 +31,27 @@ void distributed_controller::_handle_Workers_Socket_Msg()
         break;
 
     case MsgType::WORKER_LEAVE:
+        {
+            LOG(TRACE) << "Worker " << workerId << " disconnected" << std::endl;
 
-        _freeWorkersPool.erase(workerId);
-        _workerInfoRepository.remove_worker_record(workerId);
-        // TODO: Handle busy worker leave - push back into islandsWaitingForAlloc?
-
+            _freeWorkersPool.erase(workerId);
+            _workerInfoRepository.remove_worker_record(workerId);
+            // Handle busy worker leave (if worker is allocated work)
+            if (_workAllocationMap.contains(workerId))
+            {
+                const auto [islandId, workData] = _workAllocationMap.at(workerId);
+                _workAllocationMap.erase(workerId);
+                // Call the same function which is called when island first requests work allocation
+                _allocate_island_work(islandId, workData);
+            }
+        }
         break;
     case MsgType::WORK_RESULTS:
         {
-            const auto myIslandId = _workAllocationMap.at(workerId);
+            const auto myIslandId = _workAllocationMap.at(workerId).islandId;
             // Pass results from worker to island
             _islandsSocket.send(myIslandId, MsgType::WORK_RESULTS, binary);
-            // Remove this {workerId, islandId} work allocation
+            // Remove this {workerId, record} work allocation
             _workAllocationMap.erase(workerId);
             // Add worker back into the free pool
             _add_free_worker(workerId);
@@ -83,15 +92,7 @@ void distributed_controller::_handle_Islands_Socket_Msg()
          * Allocate worker to this island if there are free workers,
          * otherwise put island into the _islandsWaitingForAlloc set
         */
-        if (_freeWorkersPool.empty())
-        {
-            _islandsWaitingForAlloc.emplace(islandId, binary);
-            LOG(DEBUG) << "Island " << islandId << "is waiting for allocation" << std::endl;
-        }
-        else
-        {
-            _allocate_worker_to_island(islandId, binary);
-        }
+        _allocate_island_work(islandId, binary);
         break;
     default:
         LOG(WARNING) << "WARNING: " << islandId << " sent unhandled message type: " << static_cast<int>(type) <<
@@ -103,12 +104,25 @@ void distributed_controller::_handle_Islands_Socket_Msg()
 //# Controller data logic
 //#####################################################################################
 
+void distributed_controller::_allocate_island_work(std::string islandId, std::vector<std::byte> binary)
+{
+    if (_freeWorkersPool.empty())
+    {
+        _islandsWaitingForAlloc.emplace(islandId, binary);
+        LOG(DEBUG) << "Island " << islandId << "is waiting for allocation" << std::endl;
+    }
+    else
+    {
+        _allocate_worker_to_island(islandId, binary);
+    }
+}
+
 void distributed_controller::_allocate_worker_to_island(const std::string& islandId,
                                                         const std::vector<std::byte>& workData)
 {
     const std::string workerId = *_freeWorkersPool.begin();
     _freeWorkersPool.erase(workerId);
-    _workAllocationMap.emplace(workerId, islandId);
+    _workAllocationMap.emplace(workerId, work_allocation_record{islandId, workData});
     LOG(TRACE) << islandId << "has been allocated " << workerId << std::endl;
 
     _workersSocket.send(workerId, MsgType::ALLOCATE_WORK, workData);
@@ -146,13 +160,13 @@ void distributed_controller::_add_free_worker(const std::string& workerId)
 //#####################################################################################
 
 distributed_controller::distributed_controller(const std::string& controllerAddress,
-                                               int heartbeatInterval,
-                                               int heartbeatTimeout,
-                                               int reconnectIvlMax) : _heartbeat_interval(heartbeatInterval),
-                                                                      _heartbeat_timeout(heartbeatTimeout),
-                                                                      _reconnect_ivl_max(reconnectIvlMax),
-                                                                      _workersSocket{_ctx},
-                                                                      _islandsSocket{_ctx}
+                                               const int heartbeatInterval,
+                                               const int heartbeatTimeout,
+                                               const int reconnectIvlMax) : _heartbeat_interval(heartbeatInterval),
+                                                                            _heartbeat_timeout(heartbeatTimeout),
+                                                                            _reconnect_ivl_max(reconnectIvlMax),
+                                                                            _workersSocket{_ctx},
+                                                                            _islandsSocket{_ctx}
 {
     // Set ping interval and ping timeout for the controller->workers socket
     _workersSocket.get_socket().set(zmq::sockopt::heartbeat_ivl, _heartbeat_interval);
