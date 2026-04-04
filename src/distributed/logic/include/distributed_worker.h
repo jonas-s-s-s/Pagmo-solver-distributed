@@ -90,6 +90,7 @@ public:
                                 worker_mode workerMode = ARCHIPELAGO_BASED, //TODO: CHANGE
                                 unsigned archipelagoEvolutionCount = 1, //TODO: CHANGE
                                 int heartbeatInterval = 1000,
+                                int heartbeatTimeout = 3000000,
                                 int reconnectIvlMax = 10000,
                                 const std::filesystem::path& settingsFilePath = "./worker_settings.xml"
                                 );
