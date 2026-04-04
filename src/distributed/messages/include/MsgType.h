@@ -25,7 +25,13 @@ public:
     pagmo::algorithm algo;
     pagmo::population pop;
 
-    work_container(pagmo::algorithm algo, pagmo::population pop) : algo(std::move(algo)), pop(std::move(pop))
+    // This allows the controller to assign this to a specific worker
+    std::string preferredWorkerId;
+
+    work_container(pagmo::algorithm algo, pagmo::population pop, std::string preferredWorker = "") :
+        algo(std::move(algo)),
+        pop(std::move(pop)),
+        preferredWorkerId(std::move(preferredWorker))
     {
     }
 
@@ -41,13 +47,13 @@ private:
     template <typename Archive>
     void save(Archive& ar, unsigned) const
     {
-        pagmo::detail::to_archive(ar, algo, pop);
+        pagmo::detail::to_archive(ar, algo, pop, preferredWorkerId);
     }
 
     template <typename Archive>
     void load(Archive& ar, unsigned)
     {
-        pagmo::detail::from_archive(ar, algo, pop);
+        pagmo::detail::from_archive(ar, algo, pop, preferredWorkerId);
     }
 
     BOOST_SERIALIZATION_SPLIT_MEMBER()

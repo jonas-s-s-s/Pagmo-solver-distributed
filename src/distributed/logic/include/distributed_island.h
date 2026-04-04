@@ -17,9 +17,16 @@ namespace pagmo
 
         std::string _islandId;
 
+        // Controller will try to assign worker identified by this ID to this island
+        std::string _preferredWorkerId;
+
         static std::tuple<algorithm, population> _load_pagmo_pop_and_algo(const island& isl);
 
     public:
+        void set_preferred_worker(const std::string& preferredWorkerId);
+
+        void clear_preferred_worker();
+
         // Default ctor.
         distributed_island();
 

@@ -48,6 +48,16 @@ namespace pagmo
         return {algo, pop};
     }
 
+    void distributed_island::set_preferred_worker(const std::string& preferredWorkerId)
+    {
+        _preferredWorkerId = preferredWorkerId;
+    }
+
+    void distributed_island::clear_preferred_worker()
+    {
+        _preferredWorkerId.clear();
+    }
+
     distributed_island::distributed_island() : _ctx{new zmq::context_t{}},
                                                _dealerSocket{new distributed::dealer_socket(*_ctx)}
     {
@@ -83,7 +93,7 @@ namespace pagmo
             LOG(TRACE) << "Running distributed island" << std::endl;
             _dealerSocket->connect("ipc://distributed_controller_islands_socket");
             LOG(TRACE) << "Distributed island connected" << std::endl;
-            _dealerSocket->send(MsgType::ALLOCATE_WORK, work_container{initial_algo, initial_pop});
+            _dealerSocket->send(MsgType::ALLOCATE_WORK, work_container{initial_algo, initial_pop, _preferredWorkerId});
             LOG(TRACE) << "Distributed island allocate work sent" << std::endl;
 
             // 3) Wait until controller returns results from worker
