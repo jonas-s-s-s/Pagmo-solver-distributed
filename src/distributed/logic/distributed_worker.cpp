@@ -169,10 +169,14 @@ void distributed_worker::_start_worker_thread(const std::vector<std::byte>& work
 //# Sockets setup & initialization
 //#####################################################################################
 
-distributed_worker::distributed_worker(const std::string& controllerAddress, const worker_mode workerMode,
-                                       const unsigned archipelagoEvolutionCount, const int heartbeatInterval,
+distributed_worker::distributed_worker(const std::string& controllerAddress
+                                       , const worker_mode workerMode,
+                                       const unsigned archipelagoEvolutionCount,
+                                       const int heartbeatInterval,
                                        const int heartbeatTimeout,
-                                       const int reconnectIvlMax) :
+                                       const int reconnectIvlMax,
+                                       const std::filesystem::path& settingsFilePath) :
+    _settings(settingsFilePath),
     _heartbeat_interval(heartbeatInterval),
     _heartbeat_timeout(heartbeatTimeout),
     _reconnect_ivl_max(reconnectIvlMax),
@@ -211,7 +215,7 @@ distributed_worker::distributed_worker(const std::string& controllerAddress, con
     _threadSocket.bind("inproc://thread_socket");
 
     // Configure the worker socket so it can communicate with the controller
-    _workerId = "worker_" + uuid::v4::UUID::New().String();
+    _workerId = _settings().workerId;
     _workerSocket.set_routing_id(_workerId);
     _workerSocket.connect(controllerAddress);
 }
@@ -243,6 +247,8 @@ void distributed_worker::run_client()
 
 distributed_worker::~distributed_worker()
 {
+    _settings.save();
+
     if (_clientThread.joinable())
     {
         _workerSocket.get_socket().close();

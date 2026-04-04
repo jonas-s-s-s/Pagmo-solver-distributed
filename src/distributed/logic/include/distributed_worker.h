@@ -1,4 +1,5 @@
 #pragma once
+#include <filesystem>
 #include <numeric>
 #include <thread>
 
@@ -7,6 +8,8 @@
 #include "MsgType.h"
 #include "pair_socket.h"
 #include "router_socket.h"
+#include "settings.h"
+#include "worker_settings.h"
 #include "zmq_addon.hpp"
 #include "pagmo/archipelago.hpp"
 #include "pagmo/utils/constrained.hpp"
@@ -14,12 +17,15 @@
 
 class distributed_worker
 {
+    // Worker's settings (saved to FS)
+    settings<worker_settings> _settings;
+
     // Interval between which the socket sends ping messages
-    int _heartbeat_interval = 1000;
+    int _heartbeat_interval;
     // Peer is considered dead if no ping is received after this interval
-    int _heartbeat_timeout = 3000;
+    int _heartbeat_timeout;
     // Maximal SYN packet interval (for when controller is not reachable) exponentially increases to this value
-    int _reconnect_ivl_max = 10000;
+    int _reconnect_ivl_max;
 
     zmq::context_t _ctx;
     distributed::dealer_socket _workerSocket;
@@ -78,13 +84,14 @@ public:
      * @param heartbeatInterval Interval between which the socket sends ping messages
      * @param heartbeatTimeout Peer is considered dead if no ping is received after this interval
      * @param reconnectIvlMax Maximal SYN packet interval (exponentially increases to this value)
+     * @param settingsFilePath Location of the worker settings file (including the filename)
      */
     explicit distributed_worker(const std::string& controllerAddress,
                                 worker_mode workerMode = ARCHIPELAGO_BASED, //TODO: CHANGE
                                 unsigned archipelagoEvolutionCount = 1, //TODO: CHANGE
                                 int heartbeatInterval = 1000,
-                                int heartbeatTimeout = 3000,
-                                int reconnectIvlMax = 10000
+                                int reconnectIvlMax = 10000,
+                                const std::filesystem::path& settingsFilePath = "./worker_settings.xml"
                                 );
 
     void client_loop();

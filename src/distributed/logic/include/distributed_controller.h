@@ -21,11 +21,11 @@ struct work_allocation_record
 class distributed_controller
 {
     // Interval between which the socket sends ping messages
-    int _heartbeat_interval = 1000;
+    int _heartbeat_interval;
     // Peer is considered dead if no ping is received after this interval
-    int _heartbeat_timeout = 3000;
+    int _heartbeat_timeout;
     // Maximal SYN packet interval (for when controller is not reachable) exponentially increases to this value
-    int _reconnect_ivl_max = 10000;
+    int _reconnect_ivl_max;
 
     zmq::context_t _ctx;
     zmq::active_poller_t _poller;
