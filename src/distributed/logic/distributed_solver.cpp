@@ -19,6 +19,13 @@ void distributed_solver::_set_island_hints(pagmo::island& isl) const
     }
 }
 
+std::vector<std::tuple<size_t, size_t, std::string>> distributed_solver::_generate_work_plan(
+    size_t islandCount, size_t populationSize)
+{
+    //TODO
+    return {};
+}
+
 distributed_solver::distributed_solver(const std::string& controllerAddress, const size_t expectedWorkerCount) :
     _controller(controllerAddress), _expectedWorkerCount(expectedWorkerCount)
 {
@@ -58,11 +65,20 @@ void distributed_solver::evolve(const pagmo::problem& problem, const std::vector
     const size_t currentWorkerCount = _controller.get_worker_info_repository().get_worker_count();
     // If there are more workers connected to controller than what was expected, we increase the island count
     const size_t optimalIslandCount = (_expectedWorkerCount > currentWorkerCount)
-                                          ? _expectedWorkerCount : currentWorkerCount;
+                                          ? _expectedWorkerCount
+                                          : currentWorkerCount;
+
+    // Work plan ensures correct worker load balancing
+    const auto& workPlan = _generate_work_plan(optimalIslandCount, populationSize);
 
     for (int i = 0; i < optimalIslandCount; ++i)
     {
+        const auto [islandPopSize,islandCycleCount,preferredWorker] = workPlan.at(i);
+
         pagmo::distributed_island dist_island{};
+        dist_island.set_cycle_count(islandCycleCount);
+        dist_island.set_preferred_worker(preferredWorker);
+
         auto isl = pagmo::island{dist_island, getAlgorithm(), problem, populationSize};
         // We set the initial population to this island (hints) if there are any
         _set_island_hints(isl);

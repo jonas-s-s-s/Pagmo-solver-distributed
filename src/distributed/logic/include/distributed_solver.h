@@ -12,6 +12,14 @@ class distributed_solver
     std::vector<pagmo::vector_double> _initialHints{};
     void _set_island_hints(pagmo::island& isl) const;
 
+    /**
+     * Generates a list of input parameters for each island
+     * @param islandCount The number of islands we want to use
+     * @param populationSize The total population size
+     * @return Vector of tuples: [populationSize, cycleCount, preferredWorkerId]
+     */
+    std::vector<std::tuple<size_t, size_t, std::string>> _generate_work_plan(size_t islandCount, size_t populationSize);
+
 public:
     /**
      * - Constructs the distributed solver and its internal components

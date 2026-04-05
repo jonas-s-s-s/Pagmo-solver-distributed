@@ -12,10 +12,8 @@ struct worker_settings
     /**
      * Sets initial values of the settings fields
      */
-    void initialize()
-    {
-        workerId = "worker_" + uuid::v4::UUID::New().String();
-    }
+    void initialize();
+
 private:
     //####################################
     //# BOOST SERIALIZE

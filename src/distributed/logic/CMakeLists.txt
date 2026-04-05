@@ -4,6 +4,8 @@ add_library(distributed_logic
         distributed_worker.cpp
         distributed_solver.cpp
         worker_info_repository.cpp
+        worker_settings.cpp
+        controller_settings.cpp
 )
 
 target_include_directories(distributed_logic PUBLIC include)

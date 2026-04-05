@@ -19,13 +19,19 @@ namespace pagmo
 
         // Controller will try to assign worker identified by this ID to this island
         std::string _preferredWorkerId;
+        // Cycle count for the worker's archipelago evolve
+        size_t _cycleCount = 1;
 
         static std::tuple<algorithm, population> _load_pagmo_pop_and_algo(const island& isl);
 
     public:
         void set_preferred_worker(const std::string& preferredWorkerId);
 
+        void set_cycle_count(const size_t cycleCount);
+
         void clear_preferred_worker();
+
+        void clear_cycle_count();
 
         // Default ctor.
         distributed_island();

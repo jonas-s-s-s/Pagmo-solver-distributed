@@ -11,9 +11,8 @@ struct controller_settings
     /**
      * Sets initial values of the settings fields
      */
-    void initialize()
-    {
-    }
+    void initialize();
+
 private:
     //####################################
     //# BOOST SERIALIZE
