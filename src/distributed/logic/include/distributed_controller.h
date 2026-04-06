@@ -50,7 +50,7 @@ class distributed_controller
     void _handle_Workers_Socket_Msg();
     void _handle_Islands_Socket_Msg();
 
-    void _allocate_island_work(std::string islandId, std::vector<std::byte> binary);
+    void _allocate_island_work(const std::string& islandId, const std::vector<std::byte>& workData);
 
     void _allocate_worker_to_island(const std::string& islandId, const std::vector<std::byte>& workData);
     std::tuple<std::string, std::vector<std::byte>> _pop_waiting_island();

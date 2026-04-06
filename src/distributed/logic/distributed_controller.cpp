@@ -26,7 +26,7 @@ void distributed_controller::_handle_Workers_Socket_Msg()
 
         LOG(TRACE) << "Worker " << workerId << " joined" << std::endl;
 
-        _settings().workerInfo.worker_joined(workerId, {});
+        _settings().workerInfo.worker_joined(workerId);
         _add_free_worker(workerId);
 
         LOG(DEBUG) << "Free workers: " << _freeWorkersPool.size() << std::endl;
@@ -53,8 +53,7 @@ void distributed_controller::_handle_Workers_Socket_Msg()
         {
             // Write stats into the worker info repository
             const auto workResults = vector_deserialize<work_container>(binary);
-            const auto processedPopulation = workResults.pop.size();
-            _settings().workerInfo.worker_finished_work(workerId, processedPopulation);
+            _settings().workerInfo.worker_finished_work(workerId, workResults.pop.size(), workResults.algo.get_name());
 
             // Pass results from worker to island
             const auto myIslandId = _workAllocationMap.at(workerId).islandId;
@@ -113,23 +112,35 @@ void distributed_controller::_handle_Islands_Socket_Msg()
 //# Controller data logic
 //#####################################################################################
 
-void distributed_controller::_allocate_island_work(std::string islandId, std::vector<std::byte> binary)
+void distributed_controller::_allocate_island_work(const std::string& islandId, const std::vector<std::byte>& workData)
 {
     if (_freeWorkersPool.empty())
     {
-        _islandsWaitingForAlloc.emplace(islandId, binary);
+        _islandsWaitingForAlloc.emplace(islandId, workData);
         LOG(DEBUG) << "Island " << islandId << "is waiting for allocation" << std::endl;
     }
     else
     {
-        _allocate_worker_to_island(islandId, binary);
+        _allocate_worker_to_island(islandId, workData);
     }
 }
 
 void distributed_controller::_allocate_worker_to_island(const std::string& islandId,
                                                         const std::vector<std::byte>& workData)
 {
-    const std::string workerId = *_freeWorkersPool.begin();
+    const auto serializedData = vector_deserialize<work_container>(workData);
+    const std::string preferredWorker = serializedData.preferredWorkerId;
+
+    // By default we use the first free worker
+    std::string workerId = *_freeWorkersPool.begin();
+    // If the preferred worker is available in the free workers pool, use it instead
+    if (_freeWorkersPool.contains(preferredWorker))
+    {
+        workerId = preferredWorker;
+        LOG(TRACE) << "Succesfully selected preferred worker" << std::endl;
+    }
+
+    // Erase this id, worker is no longer free, make a record for this allocation
     _freeWorkersPool.erase(workerId);
     _workAllocationMap.emplace(workerId, work_allocation_record{islandId, workData});
 
@@ -138,6 +149,7 @@ void distributed_controller::_allocate_worker_to_island(const std::string& islan
     // Write stats into the worker info repository
     _settings().workerInfo.worker_started_work(workerId);
 
+    // Send data to the selected worker
     _workersSocket.send(workerId, MsgType::ALLOCATE_WORK, workData);
 }
 

@@ -16,9 +16,13 @@ class distributed_solver
      * Generates a list of input parameters for each island
      * @param islandCount The number of islands we want to use
      * @param populationSize The total population size
+     * @param algorithms
+     * @param minIslandPopSize
      * @return Vector of tuples: [populationSize, cycleCount, preferredWorkerId]
      */
-    std::vector<std::tuple<size_t, size_t, std::string>> _generate_work_plan(size_t islandCount, size_t populationSize);
+    std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> _generate_work_plan(
+        const size_t islandCount, size_t populationSize, const std::vector<pagmo::algorithm>& algorithms, size_t
+        minIslandPopSize);
 
 public:
     /**
@@ -33,7 +37,8 @@ public:
     void evolve(const pagmo::problem& problem,
                 const std::vector<pagmo::algorithm>& algorithms,
                 size_t populationSize,
-                size_t cycleCount = 1
+                size_t cycleCount = 1,
+                size_t minIslandPopSize = 50
     );
 
     void set_initial_hints(const std::vector<pagmo::vector_double>& hints);

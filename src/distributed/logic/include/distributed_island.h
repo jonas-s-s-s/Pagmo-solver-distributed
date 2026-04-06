@@ -36,6 +36,8 @@ namespace pagmo
         // Default ctor.
         distributed_island();
 
+        distributed_island(const std::string& preferred_worker_id, size_t cycle_count);
+
         // Island's name.
         std::string get_name() const;
         // Extra info.

@@ -9,7 +9,7 @@
 #include <boost/serialization/unordered_map.hpp>
 #include "aixlog.hpp"
 
-struct worker_info
+struct work_stats
 {
     /**
      * Maximal uint64_t value is: 18446744073709551615.
@@ -23,8 +23,6 @@ struct worker_info
     // Total number of population individuals processed by this worker
     uint64_t processedPopulation = 0;
 
-    // Place to save a timestamp when worker_started_work() is called
-    std::chrono::high_resolution_clock::time_point lastWorkStartTime;
 private:
     //####################################
     //# BOOST SERIALIZE
@@ -37,6 +35,29 @@ private:
     {
         ar & BOOST_SERIALIZATION_NVP(workTime);
         ar & BOOST_SERIALIZATION_NVP(processedPopulation);
+    }
+};
+
+struct worker_info
+{
+    work_stats totalStats{};
+    std::unordered_map<std::string, work_stats> statsByAlgorithm{};
+
+    // Place to save a timestamp when worker_started_work() is called
+    std::chrono::high_resolution_clock::time_point lastWorkStartTime;
+
+private:
+    //####################################
+    //# BOOST SERIALIZE
+    //####################################
+
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void serialize(Archive& ar, unsigned)
+    {
+        ar & BOOST_SERIALIZATION_NVP(totalStats);
+        ar & BOOST_SERIALIZATION_NVP(statsByAlgorithm);
     }
 };
 
@@ -59,9 +80,11 @@ public:
 
     void worker_started_work(const std::string& workerID);
 
-    void worker_finished_work(const std::string& workerID, size_t processedPopulation);
+    void worker_finished_work(const std::string& workerID, size_t processedPopulation, const std::string& algoName);
 
     std::optional<worker_info> get_worker_info(const std::string& workerID);
+
+    const std::unordered_set<std::string>& get_connected_workers();
 
     size_t get_worker_count();
 

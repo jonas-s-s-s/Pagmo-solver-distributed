@@ -74,6 +74,15 @@ namespace pagmo
         _islandId = "island_" + uuid::v4::UUID::New().String();
     }
 
+    distributed_island::distributed_island(const std::string& preferred_worker_id, const size_t cycle_count) :
+        _ctx{new zmq::context_t{}},
+        _dealerSocket{new distributed::dealer_socket(*_ctx)},
+        _preferredWorkerId(preferred_worker_id),
+        _cycleCount(cycle_count)
+    {
+        _islandId = "island_" + uuid::v4::UUID::New().String();
+    }
+
     // Island's name.
     std::string distributed_island::get_name() const
     {

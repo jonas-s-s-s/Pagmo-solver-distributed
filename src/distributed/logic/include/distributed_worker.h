@@ -88,7 +88,7 @@ public:
      */
     explicit distributed_worker(const std::string& controllerAddress,
                                 worker_mode workerMode = ARCHIPELAGO_BASED, //TODO: CHANGE
-                                unsigned archipelagoEvolutionCount = 1, //TODO: CHANGE
+                                unsigned archipelagoEvolutionCount = 1, //TODO: CHANGE - we now have this in work data
                                 int heartbeatInterval = 1000,
                                 int heartbeatTimeout = 3000000,
                                 int reconnectIvlMax = 10000,

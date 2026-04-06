@@ -26,6 +26,8 @@ int main(int argc, char* argv[])
         algo.set_verbosity(0);
 
         distributed_solver ds{address};
+        ds.wait_until_workers_connect(1);
+
         ds.evolve(prob, {algo}, 100);
         ds.wait_until_completion();
 
