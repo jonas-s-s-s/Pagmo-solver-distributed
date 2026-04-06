@@ -22,8 +22,16 @@ void distributed_solver::_set_island_hints(pagmo::island& isl) const
 std::vector<std::tuple<size_t, size_t, std::string>> distributed_solver::_generate_work_plan(
     size_t islandCount, size_t populationSize)
 {
-    //TODO
-    return {};
+    // TODO
+
+    std::vector<std::tuple<size_t, size_t, std::string>> output{};
+
+    for (size_t island = 0; island < islandCount; island++)
+    {
+        output.emplace_back(std::make_tuple(populationSize, 1, ""));
+    }
+
+    return output;
 }
 
 distributed_solver::distributed_solver(const std::string& controllerAddress, const size_t expectedWorkerCount) :
@@ -79,7 +87,7 @@ void distributed_solver::evolve(const pagmo::problem& problem, const std::vector
         dist_island.set_cycle_count(islandCycleCount);
         dist_island.set_preferred_worker(preferredWorker);
 
-        auto isl = pagmo::island{dist_island, getAlgorithm(), problem, populationSize};
+        auto isl = pagmo::island{dist_island, getAlgorithm(), problem, islandPopSize};
         // We set the initial population to this island (hints) if there are any
         _set_island_hints(isl);
         _archipelago.push_back(isl);

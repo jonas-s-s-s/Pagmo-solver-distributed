@@ -25,8 +25,10 @@ void distributed_controller::_handle_Workers_Socket_Msg()
             break;
 
         LOG(TRACE) << "Worker " << workerId << " joined" << std::endl;
+
+        _settings().workerInfo.worker_joined(workerId, {});
         _add_free_worker(workerId);
-        _workerInfoRepository.add_worker_record(workerId, {});
+
         LOG(DEBUG) << "Free workers: " << _freeWorkersPool.size() << std::endl;
         break;
 
@@ -35,7 +37,8 @@ void distributed_controller::_handle_Workers_Socket_Msg()
             LOG(TRACE) << "Worker " << workerId << " disconnected" << std::endl;
 
             _freeWorkersPool.erase(workerId);
-            _workerInfoRepository.remove_worker_record(workerId);
+            _settings().workerInfo.worker_left(workerId);
+
             // Handle busy worker leave (if worker is allocated work)
             if (_workAllocationMap.contains(workerId))
             {
@@ -48,9 +51,15 @@ void distributed_controller::_handle_Workers_Socket_Msg()
         break;
     case MsgType::WORK_RESULTS:
         {
-            const auto myIslandId = _workAllocationMap.at(workerId).islandId;
+            // Write stats into the worker info repository
+            const auto workResults = vector_deserialize<work_container>(binary);
+            const auto processedPopulation = workResults.pop.size();
+            _settings().workerInfo.worker_finished_work(workerId, processedPopulation);
+
             // Pass results from worker to island
+            const auto myIslandId = _workAllocationMap.at(workerId).islandId;
             _islandsSocket.send(myIslandId, MsgType::WORK_RESULTS, binary);
+
             // Remove this {workerId, record} work allocation
             _workAllocationMap.erase(workerId);
             // Add worker back into the free pool
@@ -123,7 +132,11 @@ void distributed_controller::_allocate_worker_to_island(const std::string& islan
     const std::string workerId = *_freeWorkersPool.begin();
     _freeWorkersPool.erase(workerId);
     _workAllocationMap.emplace(workerId, work_allocation_record{islandId, workData});
+
     LOG(TRACE) << islandId << "has been allocated " << workerId << std::endl;
+
+    // Write stats into the worker info repository
+    _settings().workerInfo.worker_started_work(workerId);
 
     _workersSocket.send(workerId, MsgType::ALLOCATE_WORK, workData);
 }
@@ -162,11 +175,14 @@ void distributed_controller::_add_free_worker(const std::string& workerId)
 distributed_controller::distributed_controller(const std::string& controllerAddress,
                                                const int heartbeatInterval,
                                                const int heartbeatTimeout,
-                                               const int reconnectIvlMax) : _heartbeat_interval(heartbeatInterval),
-                                                                            _heartbeat_timeout(heartbeatTimeout),
-                                                                            _reconnect_ivl_max(reconnectIvlMax),
-                                                                            _workersSocket{_ctx},
-                                                                            _islandsSocket{_ctx}
+                                               const int reconnectIvlMax,
+                                               const std::filesystem::path& settingsFilePath) :
+    _heartbeat_interval(heartbeatInterval),
+    _heartbeat_timeout(heartbeatTimeout),
+    _reconnect_ivl_max(reconnectIvlMax),
+    _workersSocket{_ctx},
+    _islandsSocket{_ctx},
+    _settings{settingsFilePath}
 {
     // Set ping interval and ping timeout for the controller->workers socket
     _workersSocket.get_socket().set(zmq::sockopt::heartbeat_ivl, _heartbeat_interval);
@@ -228,6 +244,8 @@ void distributed_controller::run_server()
 
 distributed_controller::~distributed_controller()
 {
+    _settings.save();
+
     if (_serverThread.joinable())
     {
         // This should shut down the poller and its thread
@@ -245,5 +263,5 @@ distributed_controller::~distributed_controller()
 
 worker_info_repository& distributed_controller::get_worker_info_repository()
 {
-    return _workerInfoRepository;
+    return _settings().workerInfo;
 }

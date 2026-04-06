@@ -1,42 +1,82 @@
 #pragma once
+#include <chrono>
 #include <mutex>
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
+#include <pagmo/s11n.hpp>
+#include <boost/serialization/unordered_map.hpp>
+#include "aixlog.hpp"
 
-/**
- * - A class intended to provide thread-safe access to information about workers connected to the controller
- * - Controller modifies, other classes can read this object to get details about the currently connected workers
- * - This class should encapsulate all additional information about workers, beyond what is stored in the controller itself
- * - Primary objective should be to store static information only, i.e. we only need to modify this class when a worker joins or leaves
- */
+struct worker_info
+{
+    /**
+     * Maximal uint64_t value is: 18446744073709551615.
+     * We're using milliseconds, if we convert this value to years (divide by 3,154e+10),
+     * the result is: 2149100000000000 years. Therefore it's safe to assume these variables
+     * will never overflow.
+    */
+
+    // Total time spent by the worker on running computations
+    uint64_t workTime = 0;
+    // Total number of population individuals processed by this worker
+    uint64_t processedPopulation = 0;
+
+    // Place to save a timestamp when worker_started_work() is called
+    std::chrono::high_resolution_clock::time_point lastWorkStartTime;
+private:
+    //####################################
+    //# BOOST SERIALIZE
+    //####################################
+
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void serialize(Archive& ar, unsigned)
+    {
+        ar & BOOST_SERIALIZATION_NVP(workTime);
+        ar & BOOST_SERIALIZATION_NVP(processedPopulation);
+    }
+};
+
 class worker_info_repository
 {
-    // To protect the unordered_map
-    std::mutex _mapMutex{};
+    // Protect members of this class
+    std::mutex _mtx{};
 
-    // Notifying when _workerRecords changes
+    // Notifying when the number of connected workers changes
     std::condition_variable _cv;
 
-    /*
-     * - Include any constant info about the worker, such as OS, hardware details, etc. in here
-     * - For now reserved for future use
-     */
-    struct worker_info
-    {
-    };
+    std::unordered_set<std::string> _connectedWorkers;
 
     std::unordered_map<std::string, worker_info> _workerRecords;
 
 public:
+    void worker_joined(const std::string& workerID, worker_info info = worker_info{});
 
-    void add_worker_record(const std::string& workerID, worker_info info);
+    void worker_left(const std::string& workerID);
 
-    void remove_worker_record(const std::string& workerID);
+    void worker_started_work(const std::string& workerID);
 
-    std::optional<worker_info> get_worker_record(const std::string& workerID);
+    void worker_finished_work(const std::string& workerID, size_t processedPopulation);
+
+    std::optional<worker_info> get_worker_info(const std::string& workerID);
 
     size_t get_worker_count();
 
     void wait_until_worker_count(size_t target);
+
+private:
+    //####################################
+    //# BOOST SERIALIZE
+    //####################################
+
+    friend class boost::serialization::access;
+
+    template <typename Archive>
+    void serialize(Archive& ar, unsigned)
+    {
+        ar & BOOST_SERIALIZATION_NVP(_workerRecords);
+    }
 };

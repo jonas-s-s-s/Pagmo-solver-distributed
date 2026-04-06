@@ -3,10 +3,11 @@
 #include <pagmo/s11n.hpp>
 
 #include "UUID.h"
+#include "worker_info_repository.h"
 
 struct controller_settings
 {
-    std::string id;
+    worker_info_repository workerInfo{};
 
     /**
      * Sets initial values of the settings fields
@@ -23,6 +24,6 @@ private:
     template <typename Archive>
     void serialize(Archive& ar, unsigned)
     {
-        ar & BOOST_SERIALIZATION_NVP(id);
+        ar & BOOST_SERIALIZATION_NVP(workerInfo);
     }
 };
