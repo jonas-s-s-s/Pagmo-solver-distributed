@@ -38,9 +38,9 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
     };
 
     // Helper lambda - safely compute average preventing division by zero
-    auto safeAvg = [](const uint64_t processed, const uint64_t time) -> uint64_t
+    auto safeAvg = [](const uint64_t processed, const uint64_t time) -> double
     {
-        return (time > 0) ? (processed / time) : 0;
+        return (time > 0) ? (static_cast<double>(processed) / static_cast<double>(time)) : 0;
     };
 
     // Prepare worker-related vars
@@ -63,7 +63,7 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
     else
     {
         // A vector of [workerId, algorithm, performanceAvgMetric], this is used to calculate island populations
-        std::vector<std::tuple<std::string, const pagmo::algorithm&, uint64_t>> workersPreprocessed{};
+        std::vector<std::tuple<std::string, const pagmo::algorithm&, double>> workersPreprocessed{};
         workersPreprocessed.reserve(islandCount);
 
         // 1) Assign workers to algorithms, picking the best-fit worker per island
@@ -72,9 +72,9 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
             const auto& currentAlgorithm = getAlgorithm();
             const auto& algoName = currentAlgorithm.get_name();
 
-            uint64_t bestTotalAvg = 0;
+            double bestTotalAvg = 0;
             std::string bestTotalWorkerId;
-            uint64_t bestAlgoAvg = 0;
+            double bestAlgoAvg = 0;
             std::string bestAlgoWorkerId;
 
             // Find the best worker in total together with the best worker for this algorithm
@@ -82,12 +82,12 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
             {
                 const auto& wInfo = repo.get_worker_info(workerId);
 
-                const uint64_t wTotalAvg = safeAvg(
+                const double wTotalAvg = safeAvg(
                     wInfo->totalStats.processedPopulation,
                     wInfo->totalStats.workTime
                 );
 
-                uint64_t wAlgoAvg = 0;
+                double wAlgoAvg = 0;
                 if (wInfo->statsByAlgorithm.contains(algoName))
                 {
                     const auto& algoStats = wInfo->statsByAlgorithm.at(algoName);
@@ -113,15 +113,15 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
             // We prefer to choose by algorithm stats, we choose by total only if it's 2x better
             const bool preferTotal = (bestTotalAvg > 2 * bestAlgoAvg);
             const auto& chosenWorkerId = preferTotal ? bestTotalWorkerId : bestAlgoWorkerId;
-            const uint64_t chosenAvg = preferTotal ? bestTotalAvg : bestAlgoAvg;
+            const double chosenAvg = preferTotal ? bestTotalAvg : bestAlgoAvg;
 
             workersPreprocessed.emplace_back(chosenWorkerId, currentAlgorithm, chosenAvg);
-            // Remove the chosen worker from the set so it cannot be assigned another island
+            // Remove the chosen worker from the set so it cannot be assigned to another island
             connectedWorkers.erase(chosenWorkerId);
         }
 
         // 2) Calculate the total performance of the worker cluster
-        uint64_t totalPerformance = 0;
+        double totalPerformance = 0;
         for (const auto& [workerId, algorithm, perfMetric] : workersPreprocessed)
         {
             totalPerformance += perfMetric;
@@ -140,8 +140,8 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
                 workerPerfPercentage = 1.0 / static_cast<double>(workersPreprocessed.size());
             }
 
-            // The population size of each worker is proportional to the percentage of performance
-            const auto workerPopSize = static_cast<size_t>(populationSize * workerPerfPercentage);
+            // The population size of each worker is proportional to the percentage of performance it has
+            const auto workerPopSize = static_cast<size_t>(static_cast<double>(populationSize) * workerPerfPercentage);
 
             output.emplace_back(std::max(minIslandPopSize, workerPopSize), 1, workerId, algorithm);
         }
@@ -157,7 +157,7 @@ distributed_solver::distributed_solver(const std::string& controllerAddress, con
 }
 
 void distributed_solver::evolve(const pagmo::problem& problem, const std::vector<pagmo::algorithm>& algorithms,
-                                const size_t populationSize, const size_t cycleCount, size_t minIslandPopSize)
+                                const size_t populationSize, const size_t cycleCount, const size_t minIslandPopSize)
 {
     // This will prevent interrupting the archipelago if it's already evolving
     if (_archipelago.status() == pagmo::evolve_status::busy ||
