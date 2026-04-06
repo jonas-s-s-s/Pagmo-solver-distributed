@@ -14,6 +14,11 @@
 #include "pagmo/archipelago.hpp"
 #include "pagmo/utils/constrained.hpp"
 
+enum class worker_mode
+{
+    SINGLE_THREADED,
+    ARCHIPELAGO_BASED,
+};
 
 class distributed_worker
 {
@@ -65,12 +70,6 @@ class distributed_worker
      */
     static unsigned _compute_optimal_island_count();
 
-    enum worker_mode
-    {
-        SINGLE_THREADED,
-        ARCHIPELAGO_BASED,
-    };
-
     worker_mode _workerMode;
 
 public:
@@ -84,9 +83,9 @@ public:
      * @param settingsFilePath Location of the worker settings file (including the filename)
      */
     explicit distributed_worker(const std::string& controllerAddress,
-                                worker_mode workerMode = ARCHIPELAGO_BASED, //TODO: CHANGE?
+                                worker_mode workerMode = worker_mode::ARCHIPELAGO_BASED, //TODO: CHANGE?
                                 int heartbeatInterval = 1000,
-                                int heartbeatTimeout = 3000000,
+                                int heartbeatTimeout = 3000000, // TODO: CHANGE
                                 int reconnectIvlMax = 10000,
                                 const std::filesystem::path& settingsFilePath = "./worker_settings.xml"
                                 );

@@ -5,7 +5,6 @@
 #include <iostream>
 
 #include "population_tools.h"
-#include "UUID.h"
 #include "vector_deserialize.h"
 #include "pagmo/archipelago.hpp"
 #include "pagmo/islands/thread_island.hpp"
@@ -152,7 +151,7 @@ void distributed_worker::_start_worker_thread(const std::vector<std::byte>& work
         {
             auto wct = vector_deserialize<work_container>(workData);
 
-            if (_workerMode == ARCHIPELAGO_BASED)
+            if (_workerMode == worker_mode::ARCHIPELAGO_BASED)
             {
                 _archipelago_based_worker(wct.algo, wct.pop, wct.cycleCount);
             }

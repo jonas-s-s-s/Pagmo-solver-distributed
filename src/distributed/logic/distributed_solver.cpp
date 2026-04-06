@@ -49,7 +49,7 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
     const size_t workerCount = connectedWorkers.size();
 
     // OPTION 1: There are more islands than connected workers (they've not connected yet), so divide work equally
-    if (islandCount > workerCount)
+    if (islandCount > workerCount || _loadBalancingStrategy == load_balancing_strategy::ALL_ISLANDS_EQUAL)
     {
         const size_t islandPop = std::max(minIslandPopSize, populationSize / islandCount);
         for (size_t i = 0; i < islandCount; ++i)
@@ -134,7 +134,8 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
             if (totalPerformance > 0)
             {
                 workerPerfPercentage = static_cast<double>(perfMetric) / static_cast<double>(totalPerformance);
-            } else
+            }
+            else
             {
                 // If all metrics are zero fall back to an equal distribution to avoid division by zero
                 workerPerfPercentage = 1.0 / static_cast<double>(workersPreprocessed.size());
@@ -142,16 +143,23 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
 
             // The population size of each worker is proportional to the percentage of performance it has
             const auto workerPopSize = static_cast<size_t>(static_cast<double>(populationSize) * workerPerfPercentage);
+            const auto finalWorkerPopSize = std::max(minIslandPopSize, workerPopSize);
 
-            output.emplace_back(std::max(minIslandPopSize, workerPopSize), 1, workerId, algorithm);
+            LOG(TRACE) << workerId << " provides " << workerPerfPercentage * 100 <<
+                "% of total worker cluster processing power" << std::endl;
+            LOG(TRACE) << workerId << " has been assigned " << finalWorkerPopSize << " population size" << std::endl;
+
+            output.emplace_back(finalWorkerPopSize, 1, workerId, algorithm);
         }
     }
 
     return output;
 }
 
-distributed_solver::distributed_solver(const std::string& controllerAddress, const size_t expectedWorkerCount) :
-    _controller(controllerAddress), _expectedWorkerCount(expectedWorkerCount)
+
+distributed_solver::distributed_solver(const std::string& controllerAddress, const size_t expectedWorkerCount,
+    const load_balancing_strategy loadBalancingStrategy):
+    _controller(controllerAddress), _expectedWorkerCount(expectedWorkerCount), _loadBalancingStrategy(loadBalancingStrategy)
 {
     _controller.run_server();
 }

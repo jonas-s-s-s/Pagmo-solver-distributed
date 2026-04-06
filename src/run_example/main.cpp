@@ -26,21 +26,21 @@ int main(int argc, char* argv[])
         algo.set_verbosity(0);
 
         distributed_solver ds{address};
-        ds.wait_until_workers_connect(1);
+        ds.wait_until_workers_connect(2);
 
-        ds.evolve(prob, {algo}, 100);
+        ds.evolve(prob, {algo}, 1000);
         ds.wait_until_completion();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
-        ds.evolve(prob, {algo}, 100);
+        ds.evolve(prob, {algo}, 1000);
         ds.wait_until_completion();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
     }
     else
     {
-        distributed_worker worker{address};
+        distributed_worker worker{address, worker_mode::ARCHIPELAGO_BASED};
         // We register this worker with the UDP registry, so DLLs can be requested from controller
         udp_registry::get().set_local_cache_dir("worker_cache");
         udp_registry::get().register_udp_provider(
