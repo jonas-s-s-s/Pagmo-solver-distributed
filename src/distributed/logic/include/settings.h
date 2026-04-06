@@ -27,9 +27,11 @@ class settings
 
     SettingsStruct _settings{};
 
+    bool _autoSave;
+
 public:
-    explicit settings(const std::filesystem::path& settingsPath = "./settings.xml") :
-        _settingsPath(settingsPath)
+    explicit settings(const std::filesystem::path& settingsPath = "./settings.xml", const bool autoSave = true) :
+        _settingsPath(settingsPath), _autoSave(autoSave)
     {
         _initialize_settings();
     }
@@ -45,9 +47,11 @@ public:
 
     SettingsStruct& operator ()()
     {
-        // With this call we at least make sure that the previous version is always saved
-        _save_to_file();
-
+        if (_autoSave)
+        {
+            // With this call we at least make sure that the previous version is always saved
+            _save_to_file();
+        }
         return _settings;
     }
 

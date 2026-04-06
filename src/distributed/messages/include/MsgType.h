@@ -25,7 +25,17 @@ public:
     pagmo::algorithm algo;
     pagmo::population pop;
 
-    work_container(pagmo::algorithm algo, pagmo::population pop) : algo(std::move(algo)), pop(std::move(pop))
+    // This allows the controller to assign this to a specific worker
+    std::string preferredWorkerId;
+    // Archipelago evolution cycle count for the worker
+    size_t cycleCount{};
+
+    work_container(pagmo::algorithm algo, pagmo::population pop, std::string preferredWorker = "",
+                   const size_t cycleCount = 1) :
+        algo(std::move(algo)),
+        pop(std::move(pop)),
+        preferredWorkerId(std::move(preferredWorker)),
+        cycleCount(cycleCount)
     {
     }
 
@@ -41,13 +51,13 @@ private:
     template <typename Archive>
     void save(Archive& ar, unsigned) const
     {
-        pagmo::detail::to_archive(ar, algo, pop);
+        pagmo::detail::to_archive(ar, algo, pop, preferredWorkerId, cycleCount);
     }
 
     template <typename Archive>
     void load(Archive& ar, unsigned)
     {
-        pagmo::detail::from_archive(ar, algo, pop);
+        pagmo::detail::from_archive(ar, algo, pop, preferredWorkerId, cycleCount);
     }
 
     BOOST_SERIALIZATION_SPLIT_MEMBER()

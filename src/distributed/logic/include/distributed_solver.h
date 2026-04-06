@@ -2,8 +2,16 @@
 #include "distributed_controller.h"
 #include "pagmo/archipelago.hpp"
 
+enum class load_balancing_strategy
+{
+    ALL_ISLANDS_EQUAL,
+    BY_PERFORMANCE
+};
+
 class distributed_solver
 {
+    load_balancing_strategy _loadBalancingStrategy;
+
     distributed_controller _controller;
     size_t _expectedWorkerCount;
 
@@ -12,6 +20,18 @@ class distributed_solver
     std::vector<pagmo::vector_double> _initialHints{};
     void _set_island_hints(pagmo::island& isl) const;
 
+    /**
+     * Generates a list of input parameters for each island
+     * @param islandCount The number of islands we want to use
+     * @param populationSize The total population size
+     * @param algorithms Algorithms to be used by islands
+     * @param minIslandPopSize Minimal population size for one island
+     * @return Vector of tuples: [populationSize, cycleCount, preferredWorkerId]
+     */
+    std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> _generate_work_plan(
+        const size_t islandCount, size_t populationSize, const std::vector<pagmo::algorithm>& algorithms, size_t
+        minIslandPopSize);
+
 public:
     /**
      * - Constructs the distributed solver and its internal components
@@ -19,13 +39,15 @@ public:
      *  - This means that workers can connect as soon as this object is constructed
      * @param controllerAddress URL on which the distributed controller will run (e.g. "tcp://localhost:5000")
      * @param expectedWorkerCount the expected amount of workers, the current amount connected to controller will be used if not specified
+     * @param loadBalancingStrategy determines how populations are calculated for each island
      */
-    explicit distributed_solver(const std::string& controllerAddress, const size_t expectedWorkerCount = 1);
+    explicit distributed_solver(const std::string& controllerAddress, const size_t expectedWorkerCount = 1, load_balancing_strategy loadBalancingStrategy = load_balancing_strategy::BY_PERFORMANCE);
 
     void evolve(const pagmo::problem& problem,
                 const std::vector<pagmo::algorithm>& algorithms,
                 size_t populationSize,
-                size_t cycleCount = 1
+                size_t cycleCount = 1,
+                size_t minIslandPopSize = 50
     );
 
     void set_initial_hints(const std::vector<pagmo::vector_double>& hints);

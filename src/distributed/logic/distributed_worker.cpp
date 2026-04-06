@@ -5,7 +5,6 @@
 #include <iostream>
 
 #include "population_tools.h"
-#include "UUID.h"
 #include "vector_deserialize.h"
 #include "pagmo/archipelago.hpp"
 #include "pagmo/islands/thread_island.hpp"
@@ -100,7 +99,7 @@ unsigned distributed_worker::_compute_optimal_island_count()
     return islandCount;
 }
 
-void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo, pagmo::population& pop)
+void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo, pagmo::population& pop, const size_t archiCycleCount)
 {
     LOG(TRACE) << "Archipelago-based worker started... " << std::endl;
 
@@ -123,7 +122,7 @@ void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo, pagmo
 
     // 4) Run evolution on all islands in parallel
     LOG(TRACE) << "Using algorithm: " << algo.get_name() << std::endl;
-    archi.evolve(_archipelagoEvolutionCount);
+    archi.evolve(archiCycleCount);
     archi.wait_check();
 
     // 5) Merge individuals (and their fitness) from all islands into two vectors
@@ -152,9 +151,9 @@ void distributed_worker::_start_worker_thread(const std::vector<std::byte>& work
         {
             auto wct = vector_deserialize<work_container>(workData);
 
-            if (_workerMode == ARCHIPELAGO_BASED)
+            if (_workerMode == worker_mode::ARCHIPELAGO_BASED)
             {
-                _archipelago_based_worker(wct.algo, wct.pop);
+                _archipelago_based_worker(wct.algo, wct.pop, wct.cycleCount);
             }
             else
             {
@@ -171,7 +170,6 @@ void distributed_worker::_start_worker_thread(const std::vector<std::byte>& work
 
 distributed_worker::distributed_worker(const std::string& controllerAddress
                                        , const worker_mode workerMode,
-                                       const unsigned archipelagoEvolutionCount,
                                        const int heartbeatInterval,
                                        const int heartbeatTimeout,
                                        const int reconnectIvlMax,
@@ -182,8 +180,7 @@ distributed_worker::distributed_worker(const std::string& controllerAddress
     _reconnect_ivl_max(reconnectIvlMax),
     _workerSocket(_ctx),
     _threadSocket(_ctx),
-    _workerMode(workerMode),
-    _archipelagoEvolutionCount(archipelagoEvolutionCount)
+    _workerMode(workerMode)
 {
     // Set ping interval and ping timeout for the worker->controller socket
     _workerSocket.get_socket().set(zmq::sockopt::heartbeat_ivl, _heartbeat_interval);

@@ -192,7 +192,11 @@ std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::s
         }
 
         fStream.seekg(0, std::ios::end);
-        const std::size_t size = fStream.tellg();
+        const auto size = fStream.tellg();
+        if (size < 0)
+        {
+            throw std::runtime_error("Error: cannot read lib file at: " + libPath.string());
+        }
         fStream.seekg(0, std::ios::beg);
 
         std::vector<std::byte> fileContent(size);

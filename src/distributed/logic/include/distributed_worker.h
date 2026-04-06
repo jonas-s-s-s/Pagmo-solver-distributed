@@ -14,6 +14,11 @@
 #include "pagmo/archipelago.hpp"
 #include "pagmo/utils/constrained.hpp"
 
+enum class worker_mode
+{
+    SINGLE_THREADED,
+    ARCHIPELAGO_BASED,
+};
 
 class distributed_worker
 {
@@ -57,7 +62,7 @@ class distributed_worker
     /**
      * Archipelago based worker, causes multiple CPU cores to be used
      */
-    void _archipelago_based_worker(pagmo::algorithm& algo, pagmo::population& pop);
+    void _archipelago_based_worker(pagmo::algorithm& algo, pagmo::population& pop, size_t archiCycleCount);
 
     /**
      * Helper function to figure out the optimal island count for this archipelago worker based on hardware core count
@@ -65,31 +70,22 @@ class distributed_worker
      */
     static unsigned _compute_optimal_island_count();
 
-    enum worker_mode
-    {
-        SINGLE_THREADED,
-        ARCHIPELAGO_BASED,
-    };
-
     worker_mode _workerMode;
-
-    unsigned _archipelagoEvolutionCount;
 
 public:
     /**
      * Constructs a distributed worker, which will connect and accept work from a specified controller
      * @param controllerAddress Controller's address
      * @param workerMode Can be either SINGLE_THREADED or ARCHIPELAGO_BASED (default)
-     * @param archipelagoEvolutionCount How many times to run the archipelago evolution (when using ARCHIPELAGO_BASED)
      * @param heartbeatInterval Interval between which the socket sends ping messages
      * @param heartbeatTimeout Peer is considered dead if no ping is received after this interval
      * @param reconnectIvlMax Maximal SYN packet interval (exponentially increases to this value)
      * @param settingsFilePath Location of the worker settings file (including the filename)
      */
     explicit distributed_worker(const std::string& controllerAddress,
-                                worker_mode workerMode = ARCHIPELAGO_BASED, //TODO: CHANGE
-                                unsigned archipelagoEvolutionCount = 1, //TODO: CHANGE
+                                worker_mode workerMode = worker_mode::ARCHIPELAGO_BASED, //TODO: CHANGE?
                                 int heartbeatInterval = 1000,
+                                int heartbeatTimeout = 3000000, // TODO: CHANGE
                                 int reconnectIvlMax = 10000,
                                 const std::filesystem::path& settingsFilePath = "./worker_settings.xml"
                                 );

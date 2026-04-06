@@ -2,7 +2,9 @@
 #include <thread>
 #include <unordered_set>
 
+#include "controller_settings.h"
 #include "router_socket.h"
+#include "settings.h"
 #include "worker_info_repository.h"
 #include "zmq.hpp"
 #include "zmq_addon.hpp"
@@ -34,8 +36,8 @@ class distributed_controller
     distributed::router_socket _islandsSocket;
     std::thread _serverThread;
 
-    // Contains "static" information about the workers
-    worker_info_repository _workerInfoRepository{};
+    // "Settings" such as worker performance metrics, saved and loaded from the filesystem
+    settings<controller_settings> _settings;
 
     // Islands which cannot be allocated to any worker (_freeWorkersPool is empty) are stored here along with their data
     std::unordered_map<std::string, std::vector<std::byte>> _islandsWaitingForAlloc{};
@@ -48,7 +50,7 @@ class distributed_controller
     void _handle_Workers_Socket_Msg();
     void _handle_Islands_Socket_Msg();
 
-    void _allocate_island_work(std::string islandId, std::vector<std::byte> binary);
+    void _allocate_island_work(const std::string& islandId, const std::vector<std::byte>& workData);
 
     void _allocate_worker_to_island(const std::string& islandId, const std::vector<std::byte>& workData);
     std::tuple<std::string, std::vector<std::byte>> _pop_waiting_island();
@@ -57,7 +59,9 @@ public:
     explicit distributed_controller(const std::string& controllerAddress,
                                     int heartbeatInterval = 1000,
                                     int heartbeatTimeout = 3000,
-                                    int reconnectIvlMax = 1000);
+                                    int reconnectIvlMax = 1000,
+                                    const std::filesystem::path& settingsFilePath = "./controller_settings.xml"
+                                    );
 
     void run_server();
 

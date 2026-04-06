@@ -3,11 +3,11 @@
 #include <pagmo/s11n.hpp>
 
 #include "UUID.h"
+#include "worker_info_repository.h"
 
-struct worker_settings
+struct controller_settings
 {
-    // ID of the worker - used as an "address" in the ZeroMQ Router-Dealer model
-    std::string workerId;
+    worker_info_repository workerInfo{};
 
     /**
      * Sets initial values of the settings fields
@@ -24,6 +24,6 @@ private:
     template <typename Archive>
     void serialize(Archive& ar, unsigned)
     {
-        ar & BOOST_SERIALIZATION_NVP(workerId);
+        ar & BOOST_SERIALIZATION_NVP(workerInfo);
     }
 };
