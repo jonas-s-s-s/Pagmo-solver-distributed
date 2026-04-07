@@ -7,7 +7,7 @@
   },
   "configurePresets": [
     {
-      "name": "pagmo-exp-Debug",
+      "name": "dist_solver-Debug",
       "generator": "Ninja",
       "binaryDir": "build_Debug",
       "environment": {
@@ -19,7 +19,7 @@
       }
     },
     {
-      "name": "pagmo-exp-RelWithDebInfo",
+      "name": "dist_solver-RelWithDebInfo",
       "generator": "Ninja",
       "binaryDir": "build_RelWithDebInfo",
       "environment": {
@@ -31,7 +31,7 @@
       }
     },
     {
-      "name": "pagmo-exp-Release",
+      "name": "dist_solver-Release",
       "generator": "Ninja",
       "binaryDir": "build_Release",
       "environment": {
@@ -45,21 +45,21 @@
   ],
   "buildPresets": [
     {
-      "name": "pagmo-exp-test: Debug",
-      "displayName": "Build pagmo-exp-test",
-      "configurePreset": "pagmo-exp-Debug",
+      "name": "dist_solver-test: Debug",
+      "displayName": "Build dist_solver-test",
+      "configurePreset": "dist_solver-Debug",
       "jobs": 9
     },
     {
-      "name": "pagmo-exp-test: RelWithDebInfo",
-      "displayName": "Build pagmo-exp-test",
-      "configurePreset": "pagmo-exp-RelWithDebInfo",
+      "name": "dist_solver-test: RelWithDebInfo",
+      "displayName": "Build dist_solver-test",
+      "configurePreset": "dist_solver-RelWithDebInfo",
       "jobs": 9
     },
     {
-      "name": "pagmo-exp-test: Release",
-      "displayName": "Build pagmo-exp-test",
-      "configurePreset": "pagmo-exp-Release",
+      "name": "dist_solver-test: Release",
+      "displayName": "Build dist_solver-test",
+      "configurePreset": "dist_solver-Release",
       "jobs": 9
     }
   ]

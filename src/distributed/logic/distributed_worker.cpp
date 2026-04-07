@@ -8,6 +8,7 @@
 #include "vector_deserialize.h"
 #include "pagmo/archipelago.hpp"
 #include "pagmo/islands/thread_island.hpp"
+#include "pagmo/topologies/fully_connected.hpp"
 #include "pagmo/utils/multi_objective.hpp"
 
 //#####################################################################################
@@ -99,7 +100,64 @@ unsigned distributed_worker::_compute_optimal_island_count()
     return islandCount;
 }
 
-void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo, pagmo::population& pop, const size_t archiCycleCount)
+
+std::vector<pagmo::population> distributed_worker::_split_population_for_islands(
+    const pagmo::population& pop, const size_t islandCount) const
+{
+    const size_t totalPopSize = pop.size();
+
+    if (islandCount == 0)
+    {
+        throw std::runtime_error("_split_population_for_islands - Cannot split among 0 islands");
+    }
+
+    const pagmo::problem& prob = pop.get_problem();
+    const size_t seed = pop.get_seed();
+
+    // Round down to the nearest population count divisible by 4, make sure to not go below min pop
+    size_t baseSize = std::max(_minIslandPopSize, totalPopSize / islandCount);
+    baseSize -= baseSize % 4;
+    // The subtraction above can possibly cause empty population
+    if (baseSize == 0)
+        baseSize = 4;
+
+    // We're subtracting, so the population among all islands can be smaller than the total pop
+    const size_t assignedPop = baseSize * islandCount;
+    size_t remainingPop = (assignedPop < totalPopSize) ? totalPopSize - assignedPop : 0;
+
+    std::vector<pagmo::population> islandPops;
+    islandPops.reserve(islandCount);
+
+    size_t mainPopIndex = 0;
+    for (size_t i = 0; i < islandCount; ++i)
+    {
+        // We add extra population to islands if any is remaining after the initial subtractions
+        size_t currentSize = baseSize;
+        if (remainingPop >= 4)
+        {
+            currentSize += 4;
+            remainingPop -= 4;
+        }
+
+        // Assign individuals from the original population to this island's population
+        // The population is initially filled with random individuals, so breaking out of this loop is valid
+        pagmo::population islandPop{prob, currentSize, static_cast<unsigned>(seed + i)};
+        for (size_t j = 0; j < currentSize; ++j)
+        {
+            if (mainPopIndex >= totalPopSize)
+                break;
+            islandPop.set_x(j, pop.get_x()[mainPopIndex]);
+            ++mainPopIndex;
+        }
+
+        islandPops.emplace_back(std::move(islandPop));
+    }
+
+    return islandPops;
+}
+
+void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo, pagmo::population& pop,
+                                                   const size_t archiCycleCount)
 {
     LOG(TRACE) << "Archipelago-based worker started... " << std::endl;
 
@@ -112,12 +170,12 @@ void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo, pagmo
     const unsigned islandCount = _compute_optimal_island_count();
 
     // 3) Construct and initialize islands with our algorithm and population (pop includes problem)
-    pagmo::archipelago archi{}; // TODO: Set archi topology? Maybe divide pop size by coreCount?
-    for (int i = 0; i < islandCount; ++i)
+    pagmo::archipelago archi{pagmo::fully_connected{}};
+    const auto islandPops = _split_population_for_islands(pop, islandCount);
+    for (size_t i = 0; i < islandCount; ++i)
     {
-        // Uses the EXISTING population as sent from controller, instead of creating a new one
-        // UDI will be either thread_island or fork_island (chosen internally)
-        archi.push_back(pagmo::island{algo, pop});
+        // Each island gets its portion of the population
+        archi.push_back(pagmo::island{algo, islandPops[i]});
     }
 
     // 4) Run evolution on all islands in parallel
@@ -136,7 +194,7 @@ void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo, pagmo
         allPopulations,
         allFitnesses,
         pop.size(),
-        firstIslPop.get_seed() // TODO: Maybe remove this so the seed is different each time?
+        firstIslPop.get_seed()
     );
 
     // 7) Send the algorithm (taken from the first island) and new population back to controller
@@ -168,8 +226,9 @@ void distributed_worker::_start_worker_thread(const std::vector<std::byte>& work
 //# Sockets setup & initialization
 //#####################################################################################
 
-distributed_worker::distributed_worker(const std::string& controllerAddress
-                                       , const worker_mode workerMode,
+distributed_worker::distributed_worker(const std::string& controllerAddress,
+                                       const worker_mode workerMode,
+                                       const size_t minIslandPopSize,
                                        const int heartbeatInterval,
                                        const int heartbeatTimeout,
                                        const int reconnectIvlMax,
@@ -180,6 +239,7 @@ distributed_worker::distributed_worker(const std::string& controllerAddress
     _reconnect_ivl_max(reconnectIvlMax),
     _workerSocket(_ctx),
     _threadSocket(_ctx),
+    _minIslandPopSize(minIslandPopSize),
     _workerMode(workerMode)
 {
     // Set ping interval and ping timeout for the worker->controller socket

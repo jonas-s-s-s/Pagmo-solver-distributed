@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19.0)
-project(pagmo-exp CXX C)
+project(dist_solver CXX C)
 message(STATUS "Executing top-level CMakeLists.txt...")
 
 set(CMAKE_CXX_STANDARD 20)

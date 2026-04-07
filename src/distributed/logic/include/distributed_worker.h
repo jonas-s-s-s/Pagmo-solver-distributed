@@ -64,11 +64,19 @@ class distributed_worker
      */
     void _archipelago_based_worker(pagmo::algorithm& algo, pagmo::population& pop, size_t archiCycleCount);
 
+    // Minimal pop size for the archipelago worker's islands
+    size_t _minIslandPopSize;
+
     /**
      * Helper function to figure out the optimal island count for this archipelago worker based on hardware core count
      * @return Optimal number of islands
      */
     static unsigned _compute_optimal_island_count();
+
+    /**
+     * Helper function to split the input population among multiple islands
+     */
+    std::vector<pagmo::population> _split_population_for_islands(const pagmo::population& pop, size_t islandCount) const;
 
     worker_mode _workerMode;
 
@@ -81,9 +89,11 @@ public:
      * @param heartbeatTimeout Peer is considered dead if no ping is received after this interval
      * @param reconnectIvlMax Maximal SYN packet interval (exponentially increases to this value)
      * @param settingsFilePath Location of the worker settings file (including the filename)
+     * @param minIslandPopSize Minimal population size of an island when using archipelago based worker
      */
     explicit distributed_worker(const std::string& controllerAddress,
                                 worker_mode workerMode = worker_mode::ARCHIPELAGO_BASED, //TODO: CHANGE?
+                                size_t minIslandPopSize = 50,
                                 int heartbeatInterval = 1000,
                                 int heartbeatTimeout = 3000000, // TODO: CHANGE
                                 int reconnectIvlMax = 10000,

@@ -97,6 +97,7 @@ size_t worker_info_repository::get_worker_count()
 void worker_info_repository::wait_until_worker_count(const size_t target)
 {
     std::unique_lock lock(_mtx);
+    LOG(TRACE) << "Waiting until " << target << " workers connect..." << std::endl;
 
     _cv.wait(lock, [&]
     {

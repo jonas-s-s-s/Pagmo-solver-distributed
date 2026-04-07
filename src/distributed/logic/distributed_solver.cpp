@@ -3,6 +3,7 @@
 #include "aixlog.hpp"
 #include "distributed_island.h"
 #include "population_tools.h"
+#include "pagmo/topologies/fully_connected.hpp"
 #include "pagmo/utils/multi_objective.hpp"
 
 void distributed_solver::_set_island_hints(pagmo::island& isl) const
@@ -51,7 +52,10 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
     // OPTION 1: There are more islands than connected workers (they've not connected yet), so divide work equally
     if (islandCount > workerCount || _loadBalancingStrategy == load_balancing_strategy::ALL_ISLANDS_EQUAL)
     {
-        const size_t islandPop = std::max(minIslandPopSize, populationSize / islandCount);
+        size_t islandPop = std::max(minIslandPopSize, populationSize / islandCount);
+        // Make sure it's divisible by 4 (some algorithms require this)
+        islandPop += islandPop % 4;
+
         for (size_t i = 0; i < islandCount; ++i)
         {
             // Empty worker id, it doesn't matter because all workers get the same amount of work
@@ -143,7 +147,9 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
 
             // The population size of each worker is proportional to the percentage of performance it has
             const auto workerPopSize = static_cast<size_t>(static_cast<double>(populationSize) * workerPerfPercentage);
-            const auto finalWorkerPopSize = std::max(minIslandPopSize, workerPopSize);
+            auto finalWorkerPopSize = std::max(minIslandPopSize, workerPopSize);
+            // Make sure it's divisible by 4 (some algorithms require this)
+            finalWorkerPopSize += finalWorkerPopSize % 4;
 
             LOG(TRACE) << workerId << " provides " << workerPerfPercentage * 100 <<
                 "% of total worker cluster processing power" << std::endl;
@@ -174,8 +180,8 @@ void distributed_solver::evolve(const pagmo::problem& problem, const std::vector
         throw std::runtime_error("Cannot start a new evolution while the previous one is still running.");
     }
 
-    // TODO: Set-up topology in constructor
-    _archipelago = pagmo::archipelago{};
+    // Archipelago using fully connected topology between the islands
+    _archipelago = pagmo::archipelago{pagmo::fully_connected{}};
 
     const size_t currentWorkerCount = _controller.get_worker_info_repository().get_worker_count();
     // If there are more workers connected to controller than what was expected, we increase the island count

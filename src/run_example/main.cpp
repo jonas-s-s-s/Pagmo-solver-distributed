@@ -12,10 +12,11 @@ int main(int argc, char* argv[])
 {
     AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::trace);
 
-    std::string address = "tcp://localhost:5000";
 
     if (argc >= 2 && argv[1] == std::string("-run-controller"))
     {
+        const std::string address = "tcp://0.0.0.0:5000";
+
         udp_registry::get().set_local_cache_dir("controller_cache");
 
         unsigned param = 2;
@@ -31,7 +32,7 @@ int main(int argc, char* argv[])
         ds.evolve(prob, {algo}, 1000);
         ds.wait_until_completion();
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(5000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
         ds.evolve(prob, {algo}, 1000);
         ds.wait_until_completion();
@@ -40,7 +41,9 @@ int main(int argc, char* argv[])
     }
     else
     {
-        distributed_worker worker{address, worker_mode::ARCHIPELAGO_BASED};
+        const std::string address = "tcp://localhost:5000";
+
+        distributed_worker worker{address, worker_mode::SINGLE_THREADED};
         // We register this worker with the UDP registry, so DLLs can be requested from controller
         udp_registry::get().set_local_cache_dir("worker_cache");
         udp_registry::get().register_udp_provider(
