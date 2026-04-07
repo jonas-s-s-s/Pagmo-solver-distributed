@@ -79,6 +79,7 @@ void distributed_worker::_single_threaded_worker(pagmo::algorithm& algo, pagmo::
     output.connect("inproc://thread_socket");
 
     LOG(TRACE) << "Running algorithm: " << algo.get_name() << std::endl;
+    LOG(TRACE) << "Population size: " << pop.size() << std::endl;
     const pagmo::population new_pop = algo.evolve(pop);
 
     output.send(MsgType::WORK_RESULTS, work_container{algo, new_pop});
@@ -174,6 +175,7 @@ void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo, pagmo
     const auto islandPops = _split_population_for_islands(pop, islandCount);
     for (size_t i = 0; i < islandCount; ++i)
     {
+        LOG(TRACE) << "Archipelago worker island #" << i + 1 << " population size: " << islandPops[i].size() << std::endl;
         // Each island gets its portion of the population
         archi.push_back(pagmo::island{algo, islandPops[i]});
     }
@@ -209,13 +211,19 @@ void distributed_worker::_start_worker_thread(const std::vector<std::byte>& work
         {
             auto wct = vector_deserialize<work_container>(workData);
 
-            if (_workerMode == worker_mode::ARCHIPELAGO_BASED)
+            try
             {
-                _archipelago_based_worker(wct.algo, wct.pop, wct.cycleCount);
-            }
-            else
-            {
-                _single_threaded_worker(wct.algo, wct.pop);
+                if (_workerMode == worker_mode::ARCHIPELAGO_BASED)
+                {
+                    _archipelago_based_worker(wct.algo, wct.pop, wct.cycleCount);
+                }
+                else
+                {
+                    _single_threaded_worker(wct.algo, wct.pop);
+                }
+            } catch (const std::exception& e) {
+                LOG(FATAL) << "Worker thread failed with exception: " << e.what() << std::endl;
+                throw e;
             }
 
             LOG(TRACE) << "Worker thread finished. " << std::endl;

@@ -47,7 +47,7 @@ public:
                 const std::vector<pagmo::algorithm>& algorithms,
                 size_t populationSize,
                 size_t cycleCount = 1,
-                size_t minIslandPopSize = 50
+                size_t minIslandPopSize = 80
     );
 
     void set_initial_hints(const std::vector<pagmo::vector_double>& hints);

@@ -93,7 +93,7 @@ public:
      */
     explicit distributed_worker(const std::string& controllerAddress,
                                 worker_mode workerMode = worker_mode::ARCHIPELAGO_BASED, //TODO: CHANGE?
-                                size_t minIslandPopSize = 50,
+                                size_t minIslandPopSize = 80,
                                 int heartbeatInterval = 1000,
                                 int heartbeatTimeout = 3000000, // TODO: CHANGE
                                 int reconnectIvlMax = 10000,
