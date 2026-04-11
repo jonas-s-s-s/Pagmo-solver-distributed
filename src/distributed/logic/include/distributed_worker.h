@@ -57,7 +57,7 @@ class distributed_worker
      * Spawns a new thread and then simply calls algo.evolve(pop), this causes
      * the evolution algorithm to use only a single CPU core
      */
-    void _single_threaded_worker(pagmo::algorithm& algo, pagmo::population& pop);
+    void _single_threaded_worker(const pagmo::algorithm& algo, const pagmo::population& pop);
 
     /**
      * Archipelago based worker, causes multiple CPU cores to be used

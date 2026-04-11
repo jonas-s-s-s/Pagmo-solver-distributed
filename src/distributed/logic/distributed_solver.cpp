@@ -137,7 +137,7 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
             double workerPerfPercentage;
             if (totalPerformance > 0)
             {
-                workerPerfPercentage = static_cast<double>(perfMetric) / static_cast<double>(totalPerformance);
+                workerPerfPercentage = perfMetric / totalPerformance;
             }
             else
             {

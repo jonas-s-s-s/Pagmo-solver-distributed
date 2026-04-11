@@ -70,7 +70,7 @@ void distributed_worker::_handle_Thread_Socket_Msg()
 //# Worker logic
 //#####################################################################################
 
-void distributed_worker::_single_threaded_worker(pagmo::algorithm& algo, pagmo::population& pop)
+void distributed_worker::_single_threaded_worker(const pagmo::algorithm& algo, const pagmo::population& pop)
 {
     LOG(TRACE) << "Single-threaded worker started... " << std::endl;
 

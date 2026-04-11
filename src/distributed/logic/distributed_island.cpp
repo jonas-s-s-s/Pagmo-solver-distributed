@@ -139,7 +139,7 @@ namespace pagmo
         };
 
         /*
-        * 2) Execute the work thread
+        * 2) Execute the island thread
         */
 
         std::exception_ptr eptr;
@@ -156,9 +156,35 @@ namespace pagmo
         });
 
         worker.join();
-        if (eptr)
+        std::string errMsg = "Aborting distributed island, the thread has thrown an exception: ";
+        try
         {
-            std::rethrow_exception(eptr);
+            if (eptr)
+                std::rethrow_exception(eptr);
+        }
+        catch (const std::exception& e)
+        {
+            errMsg += e.what();
+            LOG(FATAL) << errMsg;
+            throw std::runtime_error(errMsg);
+        }
+        catch (const std::string& e)
+        {
+            errMsg += e;
+            LOG(FATAL) << errMsg;
+            throw std::runtime_error(errMsg);
+        }
+        catch (const char* e)
+        {
+            errMsg += e;
+            LOG(FATAL) << errMsg;
+            throw std::runtime_error(errMsg);
+        }
+        catch (...)
+        {
+            errMsg += "unknown exception type";
+            LOG(FATAL) << errMsg;
+            throw std::runtime_error(errMsg);
         }
     }
 } // namespace pagmo
