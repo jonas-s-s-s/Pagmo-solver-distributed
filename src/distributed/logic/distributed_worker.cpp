@@ -175,7 +175,8 @@ void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo, pagmo
     const auto islandPops = _split_population_for_islands(pop, islandCount);
     for (size_t i = 0; i < islandCount; ++i)
     {
-        LOG(TRACE) << "Archipelago worker island #" << i + 1 << " population size: " << islandPops[i].size() << std::endl;
+        LOG(TRACE) << "Archipelago worker island #" << i + 1 << " population size: " << islandPops[i].size() <<
+            std::endl;
         // Each island gets its portion of the population
         archi.push_back(pagmo::island{algo, islandPops[i]});
     }
@@ -221,7 +222,9 @@ void distributed_worker::_start_worker_thread(const std::vector<std::byte>& work
                 {
                     _single_threaded_worker(wct.algo, wct.pop);
                 }
-            } catch (const std::exception& e) {
+            }
+            catch (const std::exception& e)
+            {
                 LOG(FATAL) << "Worker thread failed with exception: " << e.what() << std::endl;
                 throw e;
             }
@@ -341,12 +344,14 @@ std::optional<std::vector<std::byte>> distributed_worker::get_dll_from_controlle
 
     // 2) Block until controller eventually replies with DLL_BINARY
     std::tuple<MsgType, std::vector<std::byte>> receivedData{};
-    do
+    LOG(TRACE) << "Worker waiting for DLL from controller... (Name: " << lib_name << ")" << std::endl;
+    receivedData = socket.receive();
+    while (std::get<0>(receivedData) != MsgType::DLL_BINARY)
     {
+        LOG(WARNING) << "Blocking until next message... Worker received incorrect reply to GET_DLL message: enum type:"
+            << static_cast<int>(std::get<0>(receivedData)) << std::endl;
         receivedData = socket.receive();
-        // TODO: Possibly handle any other Msg Types?
     }
-    while (std::get<0>(receivedData) != MsgType::DLL_BINARY);
 
     // 3) Return the file itself
     auto dbc = vector_deserialize<dll_binary_container>(std::get<1>(receivedData));
