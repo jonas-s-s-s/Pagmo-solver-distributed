@@ -1,5 +1,4 @@
 add_executable(distributed-main-example main.cpp)
-add_executable(distributed-main-benchmark benchmark_main.cpp)
 
 add_subdirectory(problems)
 
