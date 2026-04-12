@@ -54,7 +54,7 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
     {
         size_t islandPop = std::max(minIslandPopSize, populationSize / islandCount);
         // Make sure it's divisible by 4 (some algorithms require this)
-        islandPop += islandPop % 4;
+        islandPop += 4 - islandPop % 4;
 
         for (size_t i = 0; i < islandCount; ++i)
         {
@@ -149,7 +149,7 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
             const auto workerPopSize = static_cast<size_t>(static_cast<double>(populationSize) * workerPerfPercentage);
             auto finalWorkerPopSize = std::max(minIslandPopSize, workerPopSize);
             // Make sure it's divisible by 4 (some algorithms require this)
-            finalWorkerPopSize += finalWorkerPopSize % 4;
+            finalWorkerPopSize +=  4 - finalWorkerPopSize % 4;
 
             LOG(TRACE) << workerId << " provides " << workerPerfPercentage * 100 <<
                 "% of total worker cluster processing power" << std::endl;
