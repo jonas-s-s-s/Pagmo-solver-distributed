@@ -1,0 +1,5 @@
+add_library(distributed_benchmark solver_benchmark.cpp benchmark_results_html.cpp)
+
+target_include_directories(distributed_benchmark PUBLIC include)
+
+target_link_libraries(distributed_benchmark distributed_logic distributed_utils pagmo)

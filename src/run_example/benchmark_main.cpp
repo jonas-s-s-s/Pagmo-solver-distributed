@@ -2,7 +2,7 @@
 #include "distributed_controller.h"
 #include "distributed_solver.h"
 #include "distributed_worker.h"
-#include "solver_benchmark.h"
+#include "../distributed/benchmark/include/solver_benchmark.h"
 #include "udp_dll_wrapper.h"
 #include "udp_registry.h"
 
@@ -27,7 +27,6 @@
 
 void benchmark_dist_solver_compare(const std::string& address,
                                    const pagmo::problem& prob,
-                                   const std::string outputFormat = "html",
                                    const size_t popSize = 1000,
                                    const size_t genCount = 500)
 {
@@ -57,12 +56,12 @@ void benchmark_dist_solver_compare(const std::string& address,
     std::cout << "SO benchmark waiting for " << workerCount << " workers to connect..." << std::endl;
     ds.wait_until_workers_connect(workerCount);
 
-    std::string resultsAsHtml = "<h1>" + prob.get_name() + "</h1>";
+    solver_benchmark bench{prob};
 
     // Run a benchmark for each SO algorithm VS metasolver using all algorithms
     for (int i = 0; i < soAlgs.size(); ++i)
     {
-        solver_benchmark bench{prob};
+        std::cout << i + 1 << "/" << soAlgs.size() << " (" << soAlgs[i].get_name() + ")" << std::endl;
 
         // 1) Using only ONE algorithm
         {
@@ -75,7 +74,7 @@ void benchmark_dist_solver_compare(const std::string& address,
             ds.evolve(prob, {algo}, popSize);
             ds.wait_until_completion();
 
-            bench.add_result(
+            bench.add_data_point(
                 ds.get_best_individual(),
                 "SINGLE_" + currentAlg.get_name(),
                 bench.stop_timer()
@@ -89,55 +88,47 @@ void benchmark_dist_solver_compare(const std::string& address,
             ds.evolve(prob, soAlgs, popSize);
             ds.wait_until_completion();
 
-            bench.add_result(
+            bench.add_data_point(
                 ds.get_best_individual(),
                 "META_ALL",
                 bench.stop_timer()
             );
         }
-
-        // Output benchmark results (CSV)
-        const auto csvStats = bench.get_benchmark_stats_csv();
-        if (outputFormat == "csv")
-            std::cout << csvStats << std::endl;
-
-        resultsAsHtml += csv_to_html(csvStats) + "<br>";
     }
 
-    // Output the HTML tables all at once
-    if (outputFormat == "html")
-        std::cout << resultsAsHtml << std::endl;
+    bench.end_current_measurement();
+    bench.save_all_results_as_html();
 }
 
 void run_benchmark_so(const std::string& address)
 {
-    std::cout << "Running single objective benchmark..." << std::endl;
+    std::cout << std::endl << "Running single objective benchmark..." << std::endl;
 
-    std::cout << "Running pagmo::schwefel..." << std::endl << std::endl;
+    std::cout << std::endl << "Running pagmo::schwefel..." << std::endl;
     {
         const pagmo::problem prob{pagmo::schwefel(2)};
         benchmark_dist_solver_compare(address, prob);
     }
 
-    std::cout << "Running pagmo::rosenbrock..." << std::endl << std::endl;
+    std::cout << std::endl << "Running pagmo::rosenbrock..." << std::endl;
     {
         pagmo::problem prob{pagmo::rosenbrock(30)};
         benchmark_dist_solver_compare(address, prob);
     }
 
-    std::cout << "Running pagmo::rastrigin..." << std::endl << std::endl;
+    std::cout << std::endl << "Running pagmo::rastrigin..." << std::endl;
     {
         pagmo::problem prob{pagmo::rastrigin(30)};
         benchmark_dist_solver_compare(address, prob);
     }
 
-    std::cout << "Running pagmo::ackley..." << std::endl << std::endl;
+    std::cout << std::endl << "Running pagmo::ackley..." << std::endl;
     {
         pagmo::problem prob{pagmo::ackley(30)};
         benchmark_dist_solver_compare(address, prob);
     }
 
-    std::cout << "Running pagmo::griewank..." << std::endl << std::endl;
+    std::cout << std::endl << "Running pagmo::griewank..." << std::endl;
     {
         pagmo::problem prob{pagmo::griewank(30)};
         benchmark_dist_solver_compare(address, prob);

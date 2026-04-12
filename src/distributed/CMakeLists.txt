@@ -4,6 +4,7 @@ add_subdirectory(sockets)
 add_subdirectory(utils)
 add_subdirectory(dynamic)
 add_subdirectory(discovery)
+add_subdirectory(benchmark)
 
 add_library(distributed INTERFACE)
 
@@ -14,4 +15,5 @@ target_link_libraries(distributed INTERFACE
         distributed_utils
         distributed_dynamic
         distributed_discovery
+        distributed_benchmark
 )
