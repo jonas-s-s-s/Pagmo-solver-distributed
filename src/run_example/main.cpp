@@ -14,9 +14,9 @@
 #include "benchmark_stats.h"
 #include "so_benchmark.h"
 
-// ####################################################
-// # DIFFERENT CONTROLLER TASKS
-// ####################################################
+//####################################################
+//# DIFFERENT CONTROLLER TASKS
+//####################################################
 
 void benchmark_controller_task(const std::string& address, const size_t expectedWorkerCount,
                                const load_balancing_strategy loadBalancingStrategy, const std::string& localCacheDir)
@@ -32,24 +32,28 @@ void default_controller_task(const std::string& address, const size_t expectedWo
                              const load_balancing_strategy loadBalancingStrategy, const std::string& localCacheDir)
 {
     udp_registry::get().set_local_cache_dir(localCacheDir);
+
     unsigned param = 2;
     udp_dll_wrapper probWrapper{"schwefel_udp", std::any{param}};
     const pagmo::problem prob{probWrapper};
     pagmo::algorithm algo{pagmo::de(1500)};
     algo.set_verbosity(0);
+
     distributed_solver ds{address, expectedWorkerCount, loadBalancingStrategy};
     ds.wait_until_workers_connect();
+
     ds.evolve(prob, {algo}, 1000);
     ds.wait_until_completion();
     std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+
     ds.evolve(prob, {algo}, 1000);
     ds.wait_until_completion();
     std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 }
 
-// ####################################################
-// # CONTROLLER / WORKER RUN
-// ####################################################
+//####################################################
+//# CONTROLLER / WORKER RUN
+//####################################################
 
 void run_controller(const std::string& address, const size_t expectedWorkerCount,
                     const load_balancing_strategy loadBalancingStrategy, const std::string& localCacheDir,
@@ -124,16 +128,22 @@ void run_worker(const std::string& address, worker_mode mode,
     }
 }
 
-// ####################################################
-// # PARSING
-// ####################################################
+//####################################################
+//# PARSING
+//####################################################
 
 void print_help(char** argv)
 {
+    const std::string fName = std::filesystem::path(argv[0]).filename().string();
+
     std::cout <<
         "Usage:\n"
-        "  " << argv[0] << " --controller [options]\n"
-        "  " << argv[0] << " --worker     [options]\n"
+        "  " << fName << " --controller [options]\n"
+        "  " << fName << " --worker     [options]\n"
+        "\n"
+        "Common options:\n"
+        "  --disable-logging"
+        "  --benchmark"
         "\n"
         "Controller options:\n"
         "  --address      <addr>  (default: tcp://0.0.0.0:5000)\n"
@@ -246,9 +256,9 @@ std::optional<main_args> parse_main_args(const int argc, char** argv)
     return mainArgs;
 }
 
-// ####################################################
-// # MAIN
-// ####################################################
+//####################################################
+//# MAIN
+//####################################################
 int main(int argc, char* argv[])
 {
     // Parse cmd line args
