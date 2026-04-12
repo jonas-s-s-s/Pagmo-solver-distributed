@@ -1,4 +1,4 @@
-#include "solver_benchmark.h"
+#include "benchmark_stats.h"
 
 #include <fstream>
 
@@ -6,7 +6,7 @@
 #include "csv_conversion.h"
 #include "path_normalizer.h"
 
-std::string solver_benchmark::_get_current_stats_csv()
+std::string benchmark_stats::_get_current_stats_csv()
 {
     std::string output;
     const size_t nObj = _problem.get_nobj();
@@ -120,7 +120,7 @@ std::string solver_benchmark::_get_current_stats_csv()
     return output;
 }
 
-void solver_benchmark::_write_results_to_file(const std::filesystem::path& path, const std::string& content,
+void benchmark_stats::_write_results_to_file(const std::filesystem::path& path, const std::string& content,
                                               const bool append,
                                               const bool binary)
 {
@@ -140,47 +140,56 @@ void solver_benchmark::_write_results_to_file(const std::filesystem::path& path,
         throw std::runtime_error("_write_results_to_file: filed writing to file, path: " + path.string());
 }
 
-solver_benchmark::solver_benchmark(pagmo::problem problem) : _problem(std::move(problem))
+benchmark_stats::benchmark_stats(pagmo::problem problem) : _problem(std::move(problem))
 {
 }
 
-void solver_benchmark::start_timer()
+void benchmark_stats::set_problem(const pagmo::problem& problem)
+{
+    _problem = problem;
+}
+
+void benchmark_stats::start_timer()
 {
     _timerStart = std::chrono::high_resolution_clock::now();
 }
 
-double solver_benchmark::stop_timer() const
+double benchmark_stats::stop_timer() const
 {
     const auto end = std::chrono::high_resolution_clock::now();
     return std::chrono::duration<double>(end - _timerStart).count();
 }
 
-void solver_benchmark::add_data_point(pagmo::vector_double result, std::string pointID, double elapsedTime)
+void benchmark_stats::add_data_point(pagmo::vector_double result, std::string pointID, double elapsedTime)
 {
     _dataPoints.emplace_back(std::move(result));
     _pointIDs.emplace_back(std::move(pointID));
     _elapsedTimes.emplace_back(elapsedTime);
 }
 
-void solver_benchmark::end_current_measurement()
+void benchmark_stats::end_current_measurement(const std::string& measurementName)
 {
-    _csvStatsBuffer.emplace_back(_get_current_stats_csv(), _problem.get_name());
+    std::string name = measurementName.empty()
+                           ? _problem.get_name()
+                           : measurementName + " (" + _problem.get_name() + ")";
+
+    _csvStatsBuffer.emplace_back(_get_current_stats_csv(), name);
     clear_current_measurement();
 }
 
-void solver_benchmark::clear_current_measurement()
+void benchmark_stats::clear_current_measurement()
 {
     _dataPoints.clear();
     _pointIDs.clear();
     _elapsedTimes.clear();
 }
 
-void solver_benchmark::clear_all_results()
+void benchmark_stats::clear_all_results()
 {
     _csvStatsBuffer.clear();
 }
 
-std::vector<std::string> solver_benchmark::get_all_results_as_csv()
+std::vector<std::string> benchmark_stats::get_all_results_as_csv()
 {
     std::vector<std::string> output;
     for (const auto& [csv, name] : _csvStatsBuffer)
@@ -190,12 +199,12 @@ std::vector<std::string> solver_benchmark::get_all_results_as_csv()
     return output;
 }
 
-std::vector<std::tuple<std::string, std::string>> solver_benchmark::get_all_results_as_csv_with_names()
+std::vector<std::tuple<std::string, std::string>> benchmark_stats::get_all_results_as_csv_with_names()
 {
     return _csvStatsBuffer;
 }
 
-std::string solver_benchmark::get_all_results_as_html()
+std::string benchmark_stats::get_all_results_as_html()
 {
     benchmark_results_html html{};
     for (const auto& [csvString, sectionName] : _csvStatsBuffer)
@@ -206,7 +215,7 @@ std::string solver_benchmark::get_all_results_as_html()
     return html.get_html_page();
 }
 
-void solver_benchmark::save_all_results_as_csv(const std::filesystem::path& filePath, const bool fileNameWithDate)
+void benchmark_stats::save_all_results_as_csv(const std::filesystem::path& filePath, const bool fileNameWithDate)
 {
     const auto now = std::chrono::system_clock::now();
     std::string currentDate{};
@@ -215,16 +224,17 @@ void solver_benchmark::save_all_results_as_csv(const std::filesystem::path& file
 
     for (const auto& [csvContent, fileName] : get_all_results_as_csv_with_names())
     {
-        _write_results_to_file(filePath / std::string(fileName + currentDate + ".csv"), csvContent);
+        _write_results_to_file(filePath / std::string(fileName + " " + currentDate + ".csv"), csvContent);
     }
 }
 
-void solver_benchmark::save_all_results_as_html(const std::filesystem::path& filePath, const bool fileNameWithDate)
+void benchmark_stats::save_all_results_as_html(const std::filesystem::path& filePath, const bool fileNameWithDate)
 {
     const auto now = std::chrono::system_clock::now();
     std::string currentDate{};
     if (fileNameWithDate)
         currentDate = std::format("{:%Y-%m-%d %H:%M:%S}", now);
 
-    _write_results_to_file(filePath / std::string("solver_benchmark_" + currentDate + ".html"), get_all_results_as_html());
+    _write_results_to_file(filePath / std::string("solver_benchmark_" + currentDate + ".html"),
+                           get_all_results_as_html());
 }

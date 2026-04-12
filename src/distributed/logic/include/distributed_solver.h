@@ -63,4 +63,8 @@ public:
     void wait_until_workers_connect(size_t workerCount);
 
     void wait_until_workers_connect();
+
+    size_t get_current_worker_count();
+
+    size_t get_expected_worker_count() const;
 };

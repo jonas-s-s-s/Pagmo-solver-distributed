@@ -2,6 +2,9 @@
 #include <string>
 #include <vector>
 
+/**
+ * Creates an HTML document with tables showing benchmark statistics
+ */
 class benchmark_results_html
 {
     std::vector<std::tuple<std::string, std::string>> _sections{};

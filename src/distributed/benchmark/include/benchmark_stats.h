@@ -6,10 +6,10 @@
 #include <filesystem>
 
 /**
- * Class for benchmarking various algorithms or solvers.
+ * Class for collecting data about benchmarking
  * Usage is simple, first call start_timer(), then perform your calculation, call stop_timer() and then finally add_data_point().
  */
-class solver_benchmark
+class benchmark_stats
 {
     pagmo::problem _problem;
 
@@ -28,7 +28,9 @@ class solver_benchmark
                                        bool binary = true);
 
 public:
-    explicit solver_benchmark(pagmo::problem problem);
+    explicit benchmark_stats(pagmo::problem problem = {});
+
+    void set_problem(const pagmo::problem& problem);
 
     void start_timer();
 
@@ -36,7 +38,7 @@ public:
 
     void add_data_point(pagmo::vector_double result, std::string pointID, double elapsedTime);
 
-    void end_current_measurement();
+    void end_current_measurement(const std::string& measurementName = "");
 
     void clear_current_measurement();
 

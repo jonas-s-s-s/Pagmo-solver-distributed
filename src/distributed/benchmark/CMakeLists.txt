@@ -1,4 +1,4 @@
-add_library(distributed_benchmark solver_benchmark.cpp benchmark_results_html.cpp)
+add_library(distributed_benchmark benchmark_stats.cpp benchmark_results_html.cpp so_benchmark.cpp benchmark_runner.cpp)
 
 target_include_directories(distributed_benchmark PUBLIC include)
 

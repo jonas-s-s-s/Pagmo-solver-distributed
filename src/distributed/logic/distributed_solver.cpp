@@ -276,3 +276,13 @@ void distributed_solver::wait_until_workers_connect()
 {
     wait_until_workers_connect(_expectedWorkerCount);
 }
+
+size_t distributed_solver::get_current_worker_count()
+{
+    return _controller.get_worker_info_repository().get_worker_count();
+}
+
+size_t distributed_solver::get_expected_worker_count() const
+{
+    return _expectedWorkerCount;
+}
