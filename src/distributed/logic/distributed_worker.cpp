@@ -286,6 +286,16 @@ distributed_worker::distributed_worker(const std::string& controllerAddress,
     _workerSocket.connect(controllerAddress);
 }
 
+void distributed_worker::enable_logging(const std::string& logFilePath, const bool writeToConsole)
+{
+    glog::init_file_logger(logFilePath, writeToConsole);
+}
+
+void distributed_worker::disable_logging()
+{
+    glog::disable();
+}
+
 void distributed_worker::client_loop()
 {
     // -1 means no poller timeout

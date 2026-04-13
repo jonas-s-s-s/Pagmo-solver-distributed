@@ -169,6 +169,16 @@ distributed_solver::distributed_solver(const std::string& controllerAddress, con
     _controller.run_server();
 }
 
+void distributed_solver::enable_logging(const std::string& logFilePath, bool writeToConsole)
+{
+    glog::init_file_logger(logFilePath, writeToConsole);
+}
+
+void distributed_solver::disable_logging()
+{
+    glog::disable();
+}
+
 void distributed_solver::evolve(const pagmo::problem& problem, const std::vector<pagmo::algorithm>& algorithms,
                                 const size_t populationSize, const size_t cycleCount, const size_t minIslandPopSize)
 {

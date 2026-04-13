@@ -32,6 +32,9 @@ namespace glog
 
         std::vector<spdlog::sink_ptr> sinks;
 
+        // This will ensure that the parent directory always exists (probably not needed as spdlog would create it anyway)
+        std::filesystem::create_directories(std::filesystem::path(filePath).parent_path());
+
         if (enableConsole)
         {
             const auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
@@ -67,10 +70,9 @@ namespace glog
         const auto timestamp = std::format("{:%Y-%m-%d_%H-%M-%S}", now);
         const std::filesystem::path p(basePath);
         const auto stem = p.stem().string();
-        const auto ext  = p.extension().string();
-        const auto dir  = p.parent_path();
+        const auto ext = p.extension().string();
+        const auto dir = p.parent_path();
 
         return (dir / (stem + "_" + timestamp + ext)).string();
     }
 }
-
