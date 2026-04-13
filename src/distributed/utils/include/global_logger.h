@@ -7,7 +7,9 @@ namespace glog
 {
     std::shared_ptr<spdlog::logger> get();
 
-    void init_file_logger(const std::string& filePath = "logs/distributed.log", bool enableConsole = true);
+    std::string generate_log_filename(const std::string& basePath);
+
+    void init_file_logger(const std::string& filePath = generate_log_filename("logs/distributed.log"), bool enableConsole = true);
 
     void disable();
 }

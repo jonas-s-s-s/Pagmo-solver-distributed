@@ -1,4 +1,6 @@
 #include "global_logger.h"
+
+#include <filesystem>
 #include <vector>
 #include <mutex>
 #include <spdlog/spdlog.h>
@@ -33,12 +35,12 @@ namespace glog
         if (enableConsole)
         {
             const auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-            console_sink->set_pattern("[%H:%M:%S] [%^%l%$] %v");
+            console_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] %v");
             sinks.push_back(console_sink);
         }
 
         const auto file_sink = std::make_shared<spdlog::sinks::basic_file_sink_mt>(filePath, true);
-        file_sink->set_pattern("[%Y-%m-%d %H:%M:%S] [%l] %v");
+        file_sink->set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%l] [pid:%P] [tid:%t] %v");
         sinks.push_back(file_sink);
 
         g_logger = std::make_shared<spdlog::logger>("global_logger", sinks.begin(), sinks.end());
@@ -58,4 +60,17 @@ namespace glog
 
         spdlog::set_default_logger(g_logger);
     }
+
+    std::string generate_log_filename(const std::string& basePath)
+    {
+        const auto now = std::chrono::system_clock::now();
+        const auto timestamp = std::format("{:%Y-%m-%d_%H-%M-%S}", now);
+        const std::filesystem::path p(basePath);
+        const auto stem = p.stem().string();
+        const auto ext  = p.extension().string();
+        const auto dir  = p.parent_path();
+
+        return (dir / (stem + "_" + timestamp + ext)).string();
+    }
 }
+
