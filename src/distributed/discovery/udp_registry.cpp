@@ -125,7 +125,7 @@ void udp_registry::register_udp_provider(const udp_provider& providerFunc)
     // This will prevent provider from changing if any thread is executing inside construct_udp()
     std::scoped_lock lock(_registryMutex);
 
-    glog::get()->trace("udp_provider has been registered in udp_registry");
+    glog::get()->debug("udp_provider has been registered in udp_registry");
 
     _udp_provider = providerFunc;
 }
@@ -134,7 +134,7 @@ void udp_registry::set_local_cache_dir(const std::filesystem::path& directory)
 {
     std::scoped_lock lock(_registryMutex);
 
-    glog::get()->trace("cache has been set to: {}", directory.string());
+    glog::get()->debug("cache has been set to: {}", directory.string());
 
     _local_cache = directory;
 }

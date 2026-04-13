@@ -34,7 +34,7 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
             algorithmPtr = algorithms.begin();
 
         const auto& alg = *algorithmPtr++;
-        glog::get()->trace("Choosing algorithm: {}", alg.get_name());
+        glog::get()->debug("Choosing algorithm: {}", alg.get_name());
         return alg;
     };
 
@@ -151,8 +151,8 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
             // Make sure it's divisible by 4 (some algorithms require this)
             finalWorkerPopSize +=  4 - finalWorkerPopSize % 4;
 
-            glog::get()->trace("{} provides {}% of total worker cluster processing power", workerId, workerPerfPercentage * 100);
-            glog::get()->trace("{} has been assigned {} population size", workerId, finalWorkerPopSize);
+            glog::get()->debug("{} provides {}% of total worker cluster processing power", workerId, workerPerfPercentage * 100);
+            glog::get()->debug("{} has been assigned {} population size", workerId, finalWorkerPopSize);
 
             output.emplace_back(finalWorkerPopSize, 1, workerId, algorithm);
         }
@@ -221,7 +221,7 @@ pagmo::vector_double distributed_solver::wait_until_completion()
 
     _archipelago.wait_check();
 
-    glog::get()->trace("Main Archipelago: Evolution finished");
+    glog::get()->info("Main Archipelago: Evolution finished");
     pagmo::vector_double bestIndividual = get_best_individual();
 
     std::string bestStr = "[";
@@ -231,7 +231,7 @@ pagmo::vector_double distributed_solver::wait_until_completion()
         bestStr += ", ";
     }
     bestStr += "]";
-    glog::get()->trace("Best individual: {}", bestStr);
+    glog::get()->debug("Best individual: {}", bestStr);
 
     return bestIndividual;
 }
