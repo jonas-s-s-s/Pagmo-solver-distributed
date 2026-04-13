@@ -25,12 +25,12 @@ void benchmark_controller_task(const std::string& address, const size_t expected
     udp_registry::get().set_local_cache_dir(localCacheDir);
 
     // Single-objective benchmark
-    /*{
+    {
         // We need exactly the same number of workers as there is SO algorithms
         distributed_solver ds{address, get_so_algorithm_count(), loadBalancingStrategy};
         benchmark_stats bench{};
         run_so_benchmark(ds, bench);
-    }*/
+    }
 
     // Multi-objective benchmark
     {
@@ -79,25 +79,25 @@ void run_controller(const std::string& address, const size_t expectedWorkerCount
     catch (const std::exception& e)
     {
         errMsg += e.what();
-        LOG(FATAL) << errMsg;
+        glog::get()->critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (const std::string& e)
     {
         errMsg += e;
-        LOG(FATAL) << errMsg;
+        glog::get()->critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (const char* e)
     {
         errMsg += e;
-        LOG(FATAL) << errMsg;
+        glog::get()->critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (...)
     {
         errMsg += "unknown exception type";
-        LOG(FATAL) << errMsg;
+        glog::get()->critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
 }
@@ -117,25 +117,25 @@ void run_worker(const std::string& address, worker_mode mode,
     catch (const std::exception& e)
     {
         errMsg += e.what();
-        LOG(FATAL) << errMsg;
+        glog::get()->critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (const std::string& e)
     {
         errMsg += e;
-        LOG(FATAL) << errMsg;
+        glog::get()->critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (const char* e)
     {
         errMsg += e;
-        LOG(FATAL) << errMsg;
+        glog::get()->critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (...)
     {
         errMsg += "unknown exception type";
-        LOG(FATAL) << errMsg;
+        glog::get()->critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
 }
@@ -281,6 +281,11 @@ int main(int argc, char* argv[])
         return 2;
     }
     const auto& ma = mainArgsOpt.value();
+
+    if (!ma.disableLogging)
+    {
+        glog::init_file_logger();
+    }
 
     // Run controller / worker
     try

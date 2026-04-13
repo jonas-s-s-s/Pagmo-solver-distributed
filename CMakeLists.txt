@@ -4,6 +4,11 @@ message(STATUS "Executing top-level CMakeLists.txt...")
 
 set(CMAKE_CXX_STANDARD 20)
 
+# Add this so spdlog can use utf-8
+if (MSVC)
+    add_compile_options(/utf-8)
+endif()
+
 # Allow the user to override where DLLs are placed
 if(NOT DEFINED DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR)
     set(DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")

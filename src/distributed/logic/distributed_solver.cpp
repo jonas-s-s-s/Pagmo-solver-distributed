@@ -1,6 +1,6 @@
 #include "distributed_solver.h"
 
-#include "aixlog.hpp"
+#include "global_logger.h"
 #include "distributed_island.h"
 #include "population_tools.h"
 #include "pagmo/topologies/fully_connected.hpp"
@@ -34,7 +34,7 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
             algorithmPtr = algorithms.begin();
 
         const auto& alg = *algorithmPtr++;
-        LOG(TRACE) << "Choosing algorithm: " << alg.get_name() << std::endl;
+        glog::get()->trace("Choosing algorithm: {}", alg.get_name());
         return alg;
     };
 
@@ -151,9 +151,8 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
             // Make sure it's divisible by 4 (some algorithms require this)
             finalWorkerPopSize +=  4 - finalWorkerPopSize % 4;
 
-            LOG(TRACE) << workerId << " provides " << workerPerfPercentage * 100 <<
-                "% of total worker cluster processing power" << std::endl;
-            LOG(TRACE) << workerId << " has been assigned " << finalWorkerPopSize << " population size" << std::endl;
+            glog::get()->trace("{} provides {}% of total worker cluster processing power", workerId, workerPerfPercentage * 100);
+            glog::get()->trace("{} has been assigned {} population size", workerId, finalWorkerPopSize);
 
             output.emplace_back(finalWorkerPopSize, 1, workerId, algorithm);
         }
@@ -222,7 +221,7 @@ pagmo::vector_double distributed_solver::wait_until_completion()
 
     _archipelago.wait_check();
 
-    LOG(TRACE) << "Main Archipelago: Evolution finished" << std::endl;
+    glog::get()->trace("Main Archipelago: Evolution finished");
     pagmo::vector_double bestIndividual = get_best_individual();
 
     std::string bestStr = "[";
@@ -232,7 +231,7 @@ pagmo::vector_double distributed_solver::wait_until_completion()
         bestStr += ", ";
     }
     bestStr += "]";
-    LOG(TRACE) << "Best individual: " << bestStr << std::endl;
+    glog::get()->trace("Best individual: {}", bestStr);
 
     return bestIndividual;
 }
