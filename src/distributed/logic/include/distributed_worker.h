@@ -4,6 +4,7 @@
 #include <thread>
 
 #include "dealer_socket.h"
+#include "global_logger.h"
 #include "zmq.hpp"
 #include "MsgType.h"
 #include "pair_socket.h"
@@ -76,7 +77,8 @@ class distributed_worker
     /**
      * Helper function to split the input population among multiple islands
      */
-    std::vector<pagmo::population> _split_population_for_islands(const pagmo::population& pop, size_t islandCount) const;
+    std::vector<pagmo::population>
+    _split_population_for_islands(const pagmo::population& pop, size_t islandCount) const;
 
     worker_mode _workerMode;
 
@@ -98,17 +100,23 @@ public:
                                 int heartbeatTimeout = 3000000, // TODO: CHANGE
                                 int reconnectIvlMax = 10000,
                                 const std::filesystem::path& settingsFilePath = "./worker_settings.xml"
-                                );
+    );
+
+    static void enable_logging(
+        const std::string& logFilePath = glog::generate_log_filename("logs/distributed_worker.log"),
+        bool writeToConsole = true);
+
+    static void disable_logging();
 
     void client_loop();
     void run_client();
 
     ~distributed_worker();
 
-     /**
-     * This function exists so udp_registry can call it and get a DLL file from the controller
-     * @param lib_name Name of the DLL
-     * @return DLL file as vector of bytes, or empty optional if not found
-     */
+    /**
+    * This function exists so udp_registry can call it and get a DLL file from the controller
+    * @param lib_name Name of the DLL
+    * @return DLL file as vector of bytes, or empty optional if not found
+    */
     std::optional<std::vector<std::byte>> get_dll_from_controller(const std::string& lib_name);
 };

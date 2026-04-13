@@ -41,7 +41,15 @@ public:
      * @param expectedWorkerCount the expected amount of workers, the current amount connected to controller will be used if not specified
      * @param loadBalancingStrategy determines how populations are calculated for each island
      */
-    explicit distributed_solver(const std::string& controllerAddress, const size_t expectedWorkerCount = 1, load_balancing_strategy loadBalancingStrategy = load_balancing_strategy::BY_PERFORMANCE);
+    explicit distributed_solver(const std::string& controllerAddress, const size_t expectedWorkerCount = 1,
+                                load_balancing_strategy loadBalancingStrategy =
+                                    load_balancing_strategy::BY_PERFORMANCE);
+
+    static void enable_logging(
+        const std::string& logFilePath = glog::generate_log_filename("logs/distributed_controller.log"),
+        bool writeToConsole = true);
+
+    static void disable_logging();
 
     void evolve(const pagmo::problem& problem,
                 const std::vector<pagmo::algorithm>& algorithms,

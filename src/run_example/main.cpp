@@ -1,4 +1,4 @@
-#include "aixlog.hpp"
+#include "global_logger.h"
 #include "distributed_controller.h"
 #include "distributed_solver.h"
 #include "distributed_worker.h"
@@ -12,6 +12,7 @@
 #include <stdexcept>
 
 #include "benchmark_stats.h"
+#include "mo_benchmark.h"
 #include "so_benchmark.h"
 
 //####################################################
@@ -23,9 +24,20 @@ void benchmark_controller_task(const std::string& address, const size_t expected
 {
     udp_registry::get().set_local_cache_dir(localCacheDir);
 
-    distributed_solver ds{address, expectedWorkerCount, loadBalancingStrategy};
-    benchmark_stats bench{};
-    run_so_benchmark(ds, bench);
+    // Single-objective benchmark
+    {
+        // We need exactly the same number of workers as there is SO algorithms
+        distributed_solver ds{address, get_so_algorithm_count(), loadBalancingStrategy};
+        benchmark_stats bench{};
+        run_so_benchmark(ds, bench);
+    }
+
+    // Multi-objective benchmark
+    {
+        distributed_solver ds{address, get_mo_algorithm_count(), loadBalancingStrategy};
+        benchmark_stats bench{};
+        run_mo_benchmark(ds, bench);
+    }
 }
 
 void default_controller_task(const std::string& address, const size_t expectedWorkerCount,
@@ -67,25 +79,25 @@ void run_controller(const std::string& address, const size_t expectedWorkerCount
     catch (const std::exception& e)
     {
         errMsg += e.what();
-        LOG(FATAL) << errMsg;
+        glog::get()->critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (const std::string& e)
     {
         errMsg += e;
-        LOG(FATAL) << errMsg;
+        glog::get()->critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (const char* e)
     {
         errMsg += e;
-        LOG(FATAL) << errMsg;
+        glog::get()->critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (...)
     {
         errMsg += "unknown exception type";
-        LOG(FATAL) << errMsg;
+        glog::get()->critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
 }
@@ -105,25 +117,25 @@ void run_worker(const std::string& address, worker_mode mode,
     catch (const std::exception& e)
     {
         errMsg += e.what();
-        LOG(FATAL) << errMsg;
+        glog::get()->critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (const std::string& e)
     {
         errMsg += e;
-        LOG(FATAL) << errMsg;
+        glog::get()->critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (const char* e)
     {
         errMsg += e;
-        LOG(FATAL) << errMsg;
+        glog::get()->critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (...)
     {
         errMsg += "unknown exception type";
-        LOG(FATAL) << errMsg;
+        glog::get()->critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
 }
@@ -173,7 +185,7 @@ struct main_args
     size_t minPopSize = 80;
 
     std::string cacheDir = ""; // Set by user
-    std::string defaultCacheDirWorker = "worker_cache";
+    std::string defaultCacheDirWorker = ".";
     std::string defaultCacheDirController = "controller_cache";
 
     bool runBenchmark = false;
@@ -270,13 +282,9 @@ int main(int argc, char* argv[])
     }
     const auto& ma = mainArgsOpt.value();
 
-    if (ma.disableLogging)
+    if (!ma.disableLogging)
     {
-        AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::fatal);
-    }
-    else
-    {
-        AixLog::Log::init<AixLog::SinkCout>(AixLog::Severity::trace);
+        glog::init_file_logger();
     }
 
     // Run controller / worker

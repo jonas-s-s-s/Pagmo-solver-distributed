@@ -1,5 +1,5 @@
 #include "udp_registry.h"
-#include "aixlog.hpp"
+#include "global_logger.h"
 
 #include <filesystem>
 #include <fstream>
@@ -13,7 +13,7 @@ void udp_registry::initialize_udp(const std::string& name, const std::optional<s
 {
     std::scoped_lock lock(_registryMutex);
 
-    LOG(TRACE) << "initializing udp library: " << name << std::endl;
+    glog::get()->trace("initializing udp library: {}", name);
 
     // If a file hash was provided, we need to check if we have the same file version
     // (udp_dll_wrapper calls this each time it deserializes itself - i.e. each time worker receives data)
@@ -72,7 +72,7 @@ std::shared_ptr<udp_base> udp_registry::construct_udp(const std::string& name, c
     // Anything calling this needs to first acquire the mutex, without this there could be a race condition on if (_udp_provider)
     std::scoped_lock lock(_registryMutex);
 
-    LOG(TRACE) << "constructing an instance of: " << name << std::endl;
+    glog::get()->trace("constructing an instance of: {}", name);
 
     // If this lib is already loaded, simply construct a new object
     if (_lib_loaders.contains(name))
@@ -108,7 +108,7 @@ std::shared_ptr<udp_base> udp_registry::clone_udp(const std::shared_ptr<udp_base
 {
     std::scoped_lock lock(_registryMutex);
 
-    LOG(TRACE) << "cloning an instance of: " << other->get_lib_file_name() << std::endl;
+    //glog::get()->trace("cloning an instance of: {}", other->get_lib_file_name());
 
     // We get the lib_loader associated with this UDP and call its clone function
     const std::string libName = other->get_lib_file_name();
@@ -125,7 +125,7 @@ void udp_registry::register_udp_provider(const udp_provider& providerFunc)
     // This will prevent provider from changing if any thread is executing inside construct_udp()
     std::scoped_lock lock(_registryMutex);
 
-    LOG(TRACE) << "udp_provider has been registered in udp_registry" << std::endl;
+    glog::get()->debug("udp_provider has been registered in udp_registry");
 
     _udp_provider = providerFunc;
 }
@@ -134,7 +134,7 @@ void udp_registry::set_local_cache_dir(const std::filesystem::path& directory)
 {
     std::scoped_lock lock(_registryMutex);
 
-    LOG(TRACE) << "cache has been set to: " << directory << std::endl;
+    glog::get()->debug("cache has been set to: {}", directory.string());
 
     _local_cache = directory;
 }
@@ -154,7 +154,7 @@ std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::s
 {
     std::scoped_lock lock(_registryMutex);
 
-    LOG(TRACE) << "get_lib_as_file: " << libName << std::endl;
+    glog::get()->trace("get_lib_as_file: {}", libName);
 
     if (!_is_lib_in_cache(libName))
     {
@@ -212,14 +212,12 @@ std::optional<std::vector<std::byte>> udp_registry::get_lib_as_file(const std::s
     }
     catch (const std::exception& e)
     {
-        LOG(WARNING) << "Warning: error when attempting to load file: " << libPath << "Err msg:" << e.what() <<
-            " Proceeding as if it doesn't exist." << std::endl;
+        glog::get()->warn("Warning: error when attempting to load file: {}Err msg:{} Proceeding as if it doesn't exist.", libPath.string(), e.what());
         return std::nullopt;
     }
     catch (...)
     {
-        LOG(WARNING) << "Warning: unknown error when attempting to load file: " << libPath <<
-            " Proceeding as if it doesn't exist." << std::endl;
+        glog::get()->warn("Warning: unknown error when attempting to load file: {} Proceeding as if it doesn't exist.", libPath.string());
         return std::nullopt;
     }
 }
@@ -250,7 +248,7 @@ std::optional<std::string> udp_registry::get_lib_file_hash(const std::string& li
 
 void udp_registry::_save_lib_into_fs(const std::string& libName, const std::vector<std::byte>& libFile)
 {
-    LOG(TRACE) << "udp_registry saving lib file: " << libName << std::endl;
+    glog::get()->trace("udp_registry saving lib file: {}", libName);
 
     const std::filesystem::path libPath = _get_lib_path(libName);
 
@@ -270,7 +268,7 @@ void udp_registry::_save_lib_into_fs(const std::string& libName, const std::vect
 
 void udp_registry::_load_lib(const std::string& libName)
 {
-    LOG(TRACE) << "udp_registry loading lib file: " << libName << std::endl;
+    glog::get()->trace("udp_registry loading lib file: {}", libName);
 
     _lib_loaders.insert({libName, lib_loader<udp_base>{_get_lib_path(libName).string()}});
     _lib_loaders.at(libName).open_lib();
@@ -291,7 +289,7 @@ void udp_registry::_unload_lib(const std::string& libName)
     if (!_lib_loaders.contains(libName))
         return;
 
-    LOG(TRACE) << "udp_registry unloading lib: " << libName << std::endl;
+    glog::get()->trace("udp_registry unloading lib: {}", libName);
 
     try
     {
@@ -299,12 +297,12 @@ void udp_registry::_unload_lib(const std::string& libName)
     }
     catch (const std::exception& e)
     {
-        LOG(ERROR) << "Error: failed to unload lib: " << libName << " Err msg: " << e.what() << std::endl;
+        glog::get()->error("Error: failed to unload lib: {} Err msg: {}", libName, e.what());
         throw;
     }
     catch (...)
     {
-        LOG(ERROR) << "Error: unknown failure unloading lib: " << libName << std::endl;
+        glog::get()->error("Error: unknown failure unloading lib: {}", libName);
         throw;
     }
 
@@ -313,7 +311,7 @@ void udp_registry::_unload_lib(const std::string& libName)
 
 void udp_registry::_delete_lib_file(const std::string& libName)
 {
-    LOG(TRACE) << "udp_registry deleting lib file: " << libName << std::endl;
+    glog::get()->trace("udp_registry deleting lib file: {}", libName);
 
     const std::filesystem::path libPath = _get_lib_path(libName);
 
@@ -336,19 +334,19 @@ void udp_registry::_delete_lib_file(const std::string& libName)
         {
             if (!std::filesystem::remove(libPath))
             {
-                LOG(ERROR) << "Error: failed to delete file: " << libPath << std::endl;
+                glog::get()->error("Error: failed to delete file: {}", libPath.string());
                 throw std::runtime_error("Failed to delete file: " + libPath.string());
             }
         }
     }
     catch (const std::exception& e)
     {
-        LOG(ERROR) << "Error: exception deleting file: " << libPath << " Err msg: " << e.what() << std::endl;
+        glog::get()->error("Error: exception deleting file: {} Err msg: {}", libPath.string(), e.what());
         throw;
     }
     catch (...)
     {
-        LOG(ERROR) << "Error: unknown exception deleting file: " << libPath << std::endl;
+        glog::get()->error("Error: unknown exception deleting file: {}", libPath.string());
         throw;
     }
 }

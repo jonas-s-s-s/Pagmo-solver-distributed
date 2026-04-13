@@ -9,7 +9,7 @@
 #include <pagmo/detail/s11n_wrappers.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 
-#include "aixlog.hpp"
+#include "global_logger.h"
 #include "udp_registry.h"
 
 class udp_dll_wrapper
@@ -81,7 +81,7 @@ private:
         const std::string libFileHash = hash.has_value() ? hash.value() : _libFileHash;
 
         pagmo::detail::to_archive(ar, libFileHash, _libFileName, _udpPtr);
-        LOG(TRACE) << "udp_dll_wrapper successfully saved" << std::endl;
+        glog::get()->trace("udp_dll_wrapper successfully saved");
     }
 
     template <typename Archive>
@@ -99,7 +99,7 @@ private:
             // 3) Deserialize UDP, lib containing the UDP class should now be available in the address space of this process
             ar >> _udpPtr;
 
-            LOG(TRACE) << "udp_dll_wrapper successfully loaded" << std::endl;
+            glog::get()->trace("udp_dll_wrapper successfully loaded");
         }
         catch (const std::exception& e)
         {
