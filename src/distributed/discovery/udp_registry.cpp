@@ -108,7 +108,7 @@ std::shared_ptr<udp_base> udp_registry::clone_udp(const std::shared_ptr<udp_base
 {
     std::scoped_lock lock(_registryMutex);
 
-    //glog::get()->trace("cloning an instance of: {}", other->get_lib_file_name());
+    //glog::get().trace("cloning an instance of: {}", other->get_lib_file_name());
 
     // We get the lib_loader associated with this UDP and call its clone function
     const std::string libName = other->get_lib_file_name();
