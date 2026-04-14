@@ -109,17 +109,17 @@ namespace pagmo
 
             // 2) Allocate our algorithm and population to some worker node via controller
             _dealerSocket->set_routing_id(_islandId);
-            glog::get()->debug("Running distributed island");
+            glog::get().debug("Running distributed island");
             _dealerSocket->connect("ipc://distributed_controller_islands_socket");
-            glog::get()->debug("Distributed island connected");
+            glog::get().debug("Distributed island connected");
             _dealerSocket->send(MsgType::ALLOCATE_WORK,
                                 work_container{initial_algo, initial_pop, _preferredWorkerId, _cycleCount}
             );
-            glog::get()->debug("Distributed island allocate work sent");
+            glog::get().debug("Distributed island allocate work sent");
 
             // 3) Wait until controller returns results from worker
             auto [type, binary] = _dealerSocket->receive();
-            glog::get()->debug("island received [{}] from controller", static_cast<int>(type));
+            glog::get().debug("island received [{}] from controller", static_cast<int>(type));
 
             if (type != MsgType::WORK_RESULTS)
             {
@@ -165,25 +165,25 @@ namespace pagmo
         catch (const std::exception& e)
         {
             errMsg += e.what();
-            glog::get()->critical("{}", errMsg);
+            glog::get().critical("{}", errMsg);
             throw std::runtime_error(errMsg);
         }
         catch (const std::string& e)
         {
             errMsg += e;
-            glog::get()->critical("{}", errMsg);
+            glog::get().critical("{}", errMsg);
             throw std::runtime_error(errMsg);
         }
         catch (const char* e)
         {
             errMsg += e;
-            glog::get()->critical("{}", errMsg);
+            glog::get().critical("{}", errMsg);
             throw std::runtime_error(errMsg);
         }
         catch (...)
         {
             errMsg += "unknown exception type";
-            glog::get()->critical("{}", errMsg);
+            glog::get().critical("{}", errMsg);
             throw std::runtime_error(errMsg);
         }
     }

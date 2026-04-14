@@ -19,7 +19,7 @@ void distributed_worker::_handle_Worker_Socket_Msg()
 {
     auto [type, binary] = _workerSocket.receive();
 
-    glog::get()->trace("[{}] from controller", static_cast<int>(type));
+    glog::get().trace("[{}] from controller", static_cast<int>(type));
 
     switch (type)
     {
@@ -37,7 +37,7 @@ void distributed_worker::_handle_Worker_Socket_Msg()
         break;
 
     default:
-        glog::get()->warn("WARNING: controller sent unhandled message type: {}", static_cast<int>(type));
+        glog::get().warn("WARNING: controller sent unhandled message type: {}", static_cast<int>(type));
     }
 }
 
@@ -61,7 +61,7 @@ void distributed_worker::_handle_Thread_Socket_Msg()
         break;
 
     default:
-        glog::get()->warn("WARNING: worker thread socket sent unhandled message type: {}", static_cast<int>(type));
+        glog::get().warn("WARNING: worker thread socket sent unhandled message type: {}", static_cast<int>(type));
     }
 }
 
@@ -71,14 +71,14 @@ void distributed_worker::_handle_Thread_Socket_Msg()
 
 void distributed_worker::_single_threaded_worker(const pagmo::algorithm& algo, const pagmo::population& pop)
 {
-    glog::get()->debug("Single-threaded worker started... ");
+    glog::get().debug("Single-threaded worker started... ");
 
     distributed::dealer_socket output{this->_ctx};
     output.set_routing_id("worker_main");
     output.connect("inproc://thread_socket");
 
-    glog::get()->debug("Running algorithm: {}", algo.get_name());
-    glog::get()->debug("Population size: {}", pop.size());
+    glog::get().debug("Running algorithm: {}", algo.get_name());
+    glog::get().debug("Population size: {}", pop.size());
     const pagmo::population new_pop = algo.evolve(pop);
 
     output.send(MsgType::WORK_RESULTS, work_container{algo, new_pop});
@@ -90,12 +90,12 @@ unsigned distributed_worker::_compute_optimal_island_count()
     unsigned islandCount = std::thread::hardware_concurrency();
     if (islandCount == 0)
     {
-        glog::get()->debug("Defaulting to 8 islands (Cannot detect core count)");
+        glog::get().debug("Defaulting to 8 islands (Cannot detect core count)");
         islandCount = 8;
     }
     else
     {
-        glog::get()->debug("Using {} islands", islandCount);
+        glog::get().debug("Using {} islands", islandCount);
     }
     return islandCount;
 }
@@ -159,7 +159,7 @@ std::vector<pagmo::population> distributed_worker::_split_population_for_islands
 void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo, pagmo::population& pop,
                                                    const size_t archiCycleCount)
 {
-    glog::get()->debug("Archipelago-based worker started... ");
+    glog::get().debug("Archipelago-based worker started... ");
 
     // 1) Set up socket for communicating with the parent thread
     distributed::dealer_socket output{this->_ctx};
@@ -174,19 +174,19 @@ void distributed_worker::_archipelago_based_worker(pagmo::algorithm& algo, pagmo
     const auto islandPops = _split_population_for_islands(pop, islandCount);
     for (size_t i = 0; i < islandCount; ++i)
     {
-        glog::get()->debug("Archipelago worker island #{} population size: {}", i + 1, islandPops[i].size());
+        glog::get().debug("Archipelago worker island #{} population size: {}", i + 1, islandPops[i].size());
         // Each island gets its portion of the population
         archi.push_back(pagmo::island{algo, islandPops[i]});
     }
 
     // 4) Run evolution on all islands in parallel
-    glog::get()->debug("Using algorithm: {}", algo.get_name());
+    glog::get().debug("Using algorithm: {}", algo.get_name());
     archi.evolve(archiCycleCount);
     archi.wait_check();
 
     // 5) Merge individuals (and their fitness) from all islands into two vectors
     const auto [allPopulations, allFitnesses] = merge_populations(archi);
-    glog::get()->trace("Size of allPopulations: {}", allPopulations.size());
+    glog::get().trace("Size of allPopulations: {}", allPopulations.size());
 
     // 6) Build a new population containing only the best POPULATION_SIZE individuals
     auto firstIslPop = archi[0].get_population();
@@ -223,11 +223,11 @@ void distributed_worker::_start_worker_thread(const std::vector<std::byte>& work
             }
             catch (const std::exception& e)
             {
-                glog::get()->critical("Worker thread failed with exception: {}", e.what());
+                glog::get().critical("Worker thread failed with exception: {}", e.what());
                 throw e;
             }
 
-            glog::get()->debug("Worker thread finished. ");
+            glog::get().debug("Worker thread finished. ");
         });
 }
 
@@ -360,11 +360,11 @@ std::optional<std::vector<std::byte>> distributed_worker::get_dll_from_controlle
 
     // 2) Block until controller eventually replies with DLL_BINARY
     std::tuple<MsgType, std::vector<std::byte>> receivedData{};
-    glog::get()->debug("Worker waiting for DLL from controller... (Name: {})", lib_name);
+    glog::get().debug("Worker waiting for DLL from controller... (Name: {})", lib_name);
     receivedData = socket.receive();
     while (std::get<0>(receivedData) != MsgType::DLL_BINARY)
     {
-        glog::get()->warn("Blocking until next message... Worker received incorrect reply to GET_DLL message: enum type:{}", static_cast<int>(std::get<0>(receivedData)));
+        glog::get().warn("Blocking until next message... Worker received incorrect reply to GET_DLL message: enum type:{}", static_cast<int>(std::get<0>(receivedData)));
         receivedData = socket.receive();
     }
 

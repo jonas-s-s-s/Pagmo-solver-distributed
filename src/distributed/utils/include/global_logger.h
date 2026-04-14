@@ -5,7 +5,7 @@
 
 namespace glog
 {
-    std::shared_ptr<spdlog::logger> get();
+    spdlog::logger& get();
 
     std::string generate_log_filename(const std::string& basePath);
 

@@ -13,7 +13,7 @@ namespace glog
     static std::mutex g_mutex;
     static std::shared_ptr<spdlog::logger> g_logger;
 
-    std::shared_ptr<spdlog::logger> get()
+    spdlog::logger& get()
     {
         std::lock_guard lock(g_mutex);
         if (!g_logger)
@@ -23,7 +23,7 @@ namespace glog
             g_logger->set_level(spdlog::level::off);
         }
 
-        return g_logger;
+        return *g_logger;
     }
 
     void init_file_logger(const std::string& filePath, const bool enableConsole)

@@ -4,7 +4,7 @@ void worker_info_repository::worker_joined(const std::string& workerID, worker_i
 {
     {
         std::scoped_lock lock(_mtx);
-        glog::get()->info("Worker joined - info collected");
+        glog::get().info("Worker joined - info collected");
 
         if (!_workerRecords.contains(workerID))
         {
@@ -19,7 +19,7 @@ void worker_info_repository::worker_left(const std::string& workerID)
 {
     {
         std::scoped_lock lock(_mtx);
-        glog::get()->info("Worker left - info collected");
+        glog::get().info("Worker left - info collected");
 
         _connectedWorkers.erase(workerID);
     }
@@ -29,7 +29,7 @@ void worker_info_repository::worker_left(const std::string& workerID)
 void worker_info_repository::worker_started_work(const std::string& workerID)
 {
     std::scoped_lock lock(_mtx);
-    glog::get()->info("Worker started work - info collected");
+    glog::get().info("Worker started work - info collected");
 
     if (!_workerRecords.contains(workerID))
     {
@@ -44,7 +44,7 @@ void worker_info_repository::worker_finished_work(const std::string& workerID, c
                                                   const std::string& algoName)
 {
     std::scoped_lock lock(_mtx);
-    glog::get()->info("Worker finished work - info collected");
+    glog::get().info("Worker finished work - info collected");
 
     if (!_workerRecords.contains(workerID))
     {
@@ -68,7 +68,7 @@ std::optional<worker_info> worker_info_repository::get_worker_info(
     const std::string& workerID)
 {
     std::scoped_lock lock(_mtx);
-    glog::get()->trace("Worker info requested");
+    glog::get().trace("Worker info requested");
 
     const auto record = _workerRecords.find(workerID);
     if (record != _workerRecords.end())
@@ -97,7 +97,7 @@ size_t worker_info_repository::get_worker_count()
 void worker_info_repository::wait_until_worker_count(const size_t target)
 {
     std::unique_lock lock(_mtx);
-    glog::get()->info("Waiting until {} workers connect...", target);
+    glog::get().info("Waiting until {} workers connect...", target);
 
     _cv.wait(lock, [&]
     {

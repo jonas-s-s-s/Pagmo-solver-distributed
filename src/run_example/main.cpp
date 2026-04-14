@@ -79,25 +79,25 @@ void run_controller(const std::string& address, const size_t expectedWorkerCount
     catch (const std::exception& e)
     {
         errMsg += e.what();
-        glog::get()->critical("{}", errMsg);
+        glog::get().critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (const std::string& e)
     {
         errMsg += e;
-        glog::get()->critical("{}", errMsg);
+        glog::get().critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (const char* e)
     {
         errMsg += e;
-        glog::get()->critical("{}", errMsg);
+        glog::get().critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (...)
     {
         errMsg += "unknown exception type";
-        glog::get()->critical("{}", errMsg);
+        glog::get().critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
 }
@@ -117,25 +117,25 @@ void run_worker(const std::string& address, worker_mode mode,
     catch (const std::exception& e)
     {
         errMsg += e.what();
-        glog::get()->critical("{}", errMsg);
+        glog::get().critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (const std::string& e)
     {
         errMsg += e;
-        glog::get()->critical("{}", errMsg);
+        glog::get().critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (const char* e)
     {
         errMsg += e;
-        glog::get()->critical("{}", errMsg);
+        glog::get().critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (...)
     {
         errMsg += "unknown exception type";
-        glog::get()->critical("{}", errMsg);
+        glog::get().critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
 }
