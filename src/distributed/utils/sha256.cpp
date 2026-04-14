@@ -16,7 +16,13 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 // big endian architectures need #define __BYTE_ORDER __BIG_ENDIAN
 #ifndef _MSC_VER
+
+#ifdef __APPLE__
+#include <machine/endian.h>
+#else
 #include <endian.h>
+#endif
+
 #endif
 
 //#define SHA2_224_SEED_VECTOR
