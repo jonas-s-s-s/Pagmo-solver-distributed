@@ -12,4 +12,10 @@ namespace glog
     void init_file_logger(const std::string& filePath = generate_log_filename("logs/distributed.log"), bool enableConsole = true);
 
     void disable();
+
+    /**
+     * Call this to properly shut down the logger, this should prevent exceptions in spdlog destructors
+     * when using libc++ (macOS)
+     */
+    void shutdown();
 }

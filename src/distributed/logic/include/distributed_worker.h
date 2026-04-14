@@ -82,6 +82,7 @@ class distributed_worker
 
     worker_mode _workerMode;
 
+    bool _loggerEnabled = false;
 public:
     /**
      * Constructs a distributed worker, which will connect and accept work from a specified controller
@@ -102,11 +103,11 @@ public:
                                 const std::filesystem::path& settingsFilePath = "./worker_settings.xml"
     );
 
-    static void enable_logging(
+    void enable_logging(
         const std::string& logFilePath = glog::generate_log_filename("logs/distributed_worker.log"),
         bool writeToConsole = true);
 
-    static void disable_logging();
+    void disable_logging();
 
     void client_loop();
     void run_client();

@@ -20,6 +20,8 @@ class distributed_solver
     std::vector<pagmo::vector_double> _initialHints{};
     void _set_island_hints(pagmo::island& isl) const;
 
+    bool _loggerEnabled = false;
+
     /**
      * Generates a list of input parameters for each island
      * @param islandCount The number of islands we want to use
@@ -45,11 +47,13 @@ public:
                                 load_balancing_strategy loadBalancingStrategy =
                                     load_balancing_strategy::BY_PERFORMANCE);
 
-    static void enable_logging(
+    ~distributed_solver();;
+
+    void enable_logging(
         const std::string& logFilePath = glog::generate_log_filename("logs/distributed_controller.log"),
         bool writeToConsole = true);
 
-    static void disable_logging();
+    void disable_logging();
 
     void evolve(const pagmo::problem& problem,
                 const std::vector<pagmo::algorithm>& algorithms,

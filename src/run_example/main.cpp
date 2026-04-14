@@ -322,8 +322,14 @@ int main(int argc, char* argv[])
     }
     catch (const std::exception& e)
     {
+        if (!ma.disableLogging)
+            glog::shutdown();
+
         return 2;
     }
+
+    if (!ma.disableLogging)
+        glog::shutdown();
 
     return 0;
 }

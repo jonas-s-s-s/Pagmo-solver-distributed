@@ -288,11 +288,13 @@ distributed_worker::distributed_worker(const std::string& controllerAddress,
 
 void distributed_worker::enable_logging(const std::string& logFilePath, const bool writeToConsole)
 {
+    _loggerEnabled = true;
     glog::init_file_logger(logFilePath, writeToConsole);
 }
 
 void distributed_worker::disable_logging()
 {
+    _loggerEnabled = false;
     glog::disable();
 }
 
@@ -332,6 +334,12 @@ distributed_worker::~distributed_worker()
         _ctx.shutdown();
 
         _clientThread.join();
+
+    }
+
+    if (_loggerEnabled)
+    {
+        glog::shutdown();
     }
 }
 

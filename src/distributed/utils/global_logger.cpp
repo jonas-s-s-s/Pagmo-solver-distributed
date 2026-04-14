@@ -75,4 +75,16 @@ namespace glog
 
         return (dir / (stem + "_" + timestamp + ext)).string();
     }
+
+    void shutdown()
+    {
+        std::lock_guard lock(g_mutex);
+        if (g_logger)
+        {
+            g_logger->flush();
+            g_logger.reset();
+        }
+        // Clear all loggers
+        spdlog::shutdown();
+    }
 }

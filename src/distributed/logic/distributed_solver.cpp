@@ -169,13 +169,23 @@ distributed_solver::distributed_solver(const std::string& controllerAddress, con
     _controller.run_server();
 }
 
+distributed_solver::~distributed_solver()
+{
+    if (_loggerEnabled)
+    {
+        glog::shutdown();
+    }
+}
+
 void distributed_solver::enable_logging(const std::string& logFilePath, bool writeToConsole)
 {
+    _loggerEnabled = true;
     glog::init_file_logger(logFilePath, writeToConsole);
 }
 
 void distributed_solver::disable_logging()
 {
+    _loggerEnabled = false;
     glog::disable();
 }
 
