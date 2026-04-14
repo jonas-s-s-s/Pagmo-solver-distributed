@@ -1,5 +1,5 @@
 #include "distributed_controller.h"
-#include "global_logger.h"
+#include "logger_init.h"
 
 #include <iostream>
 
@@ -15,7 +15,7 @@ void distributed_controller::_handle_Workers_Socket_Msg()
 {
     auto [workerId, type, binary] = _workersSocket.receive();
 
-    glog::get()->trace("[{}] from worker", static_cast<int>(type));
+    spdlog::trace("[{}] from worker", static_cast<int>(type));
 
     switch (type)
     {
@@ -24,17 +24,17 @@ void distributed_controller::_handle_Workers_Socket_Msg()
         if (_freeWorkersPool.contains(workerId))
             break;
 
-        glog::get()->info("Worker {} joined", workerId);
+        spdlog::info("Worker {} joined", workerId);
 
         _settings().workerInfo.worker_joined(workerId);
         _add_free_worker(workerId);
 
-        glog::get()->debug("Free workers: {}", _freeWorkersPool.size());
+        spdlog::debug("Free workers: {}", _freeWorkersPool.size());
         break;
 
     case MsgType::WORKER_LEAVE:
         {
-            glog::get()->info("Worker {} disconnected", workerId);
+            spdlog::info("Worker {} disconnected", workerId);
 
             _freeWorkersPool.erase(workerId);
             _settings().workerInfo.worker_left(workerId);
@@ -81,14 +81,14 @@ void distributed_controller::_handle_Workers_Socket_Msg()
         break;
 
     default:
-        glog::get()->warn("WARNING: {} sent unhandled message type: {}", workerId, static_cast<int>(type));
+        spdlog::warn("WARNING: {} sent unhandled message type: {}", workerId, static_cast<int>(type));
     }
 }
 
 void distributed_controller::_handle_Islands_Socket_Msg()
 {
     auto [islandId, type, binary] = _islandsSocket.receive();
-    glog::get()->trace("[{}] from island", static_cast<int>(type));
+    spdlog::trace("[{}] from island", static_cast<int>(type));
 
     switch (type)
     {
@@ -102,7 +102,7 @@ void distributed_controller::_handle_Islands_Socket_Msg()
         _allocate_island_work(islandId, binary);
         break;
     default:
-        glog::get()->warn("WARNING: {} sent unhandled message type: {}", islandId, static_cast<int>(type));
+        spdlog::warn("WARNING: {} sent unhandled message type: {}", islandId, static_cast<int>(type));
     }
 }
 
@@ -115,7 +115,7 @@ void distributed_controller::_allocate_island_work(const std::string& islandId, 
     if (_freeWorkersPool.empty())
     {
         _islandsWaitingForAlloc.emplace(islandId, workData);
-        glog::get()->info("Island {}is waiting for allocation", islandId);
+        spdlog::info("Island {}is waiting for allocation", islandId);
     }
     else
     {
@@ -135,14 +135,14 @@ void distributed_controller::_allocate_worker_to_island(const std::string& islan
     if (_freeWorkersPool.contains(preferredWorker))
     {
         workerId = preferredWorker;
-        glog::get()->debug("Succesfully selected preferred worker");
+        spdlog::debug("Succesfully selected preferred worker");
     }
 
     // Erase this id, worker is no longer free, make a record for this allocation
     _freeWorkersPool.erase(workerId);
     _workAllocationMap.emplace(workerId, work_allocation_record{islandId, workData});
 
-    glog::get()->debug("{} has been allocated {}", islandId, workerId);
+    spdlog::debug("{} has been allocated {}", islandId, workerId);
 
     // Write stats into the worker info repository
     _settings().workerInfo.worker_started_work(workerId);
@@ -223,9 +223,9 @@ distributed_controller::distributed_controller(const std::string& controllerAddr
     }
     catch (const std::exception& e)
     {
-        glog::get()->error("Socket failed to bind to address {} due to the following error: {}", controllerAddress,
+        spdlog::error("Socket failed to bind to address {} due to the following error: {}", controllerAddress,
                            e.what());
-        glog::get()->error("Check if this port isn't already in use");
+        spdlog::error("Check if this port isn't already in use");
         throw e;
     }
 

@@ -1,3 +1,3 @@
-add_library(distributed_utils sha256.cpp global_logger.cpp)
+add_library(distributed_utils sha256.cpp logger_init.cpp logger_control.cpp)
 target_include_directories(distributed_utils PUBLIC include)
 target_include_directories(distributed_utils PUBLIC include/spdlog)

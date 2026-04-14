@@ -7,7 +7,7 @@
 #include <unordered_set>
 #include <pagmo/s11n.hpp>
 #include <boost/serialization/unordered_map.hpp>
-#include "global_logger.h"
+#include "logger_init.h"
 
 struct work_stats
 {

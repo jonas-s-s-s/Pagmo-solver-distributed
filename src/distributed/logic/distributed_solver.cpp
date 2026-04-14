@@ -1,6 +1,6 @@
 #include "distributed_solver.h"
 
-#include "global_logger.h"
+#include "logger_init.h"
 #include "distributed_island.h"
 #include "population_tools.h"
 #include "pagmo/topologies/fully_connected.hpp"
@@ -34,7 +34,7 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
             algorithmPtr = algorithms.begin();
 
         const auto& alg = *algorithmPtr++;
-        glog::get()->debug("Choosing algorithm: {}", alg.get_name());
+        spdlog::debug("Choosing algorithm: {}", alg.get_name());
         return alg;
     };
 
@@ -151,8 +151,8 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
             // Make sure it's divisible by 4 (some algorithms require this)
             finalWorkerPopSize +=  4 - finalWorkerPopSize % 4;
 
-            glog::get()->debug("{} provides {}% of total worker cluster processing power", workerId, workerPerfPercentage * 100);
-            glog::get()->debug("{} has been assigned {} population size", workerId, finalWorkerPopSize);
+            spdlog::debug("{} provides {}% of total worker cluster processing power", workerId, workerPerfPercentage * 100);
+            spdlog::debug("{} has been assigned {} population size", workerId, finalWorkerPopSize);
 
             output.emplace_back(finalWorkerPopSize, 1, workerId, algorithm);
         }
@@ -173,20 +173,8 @@ distributed_solver::~distributed_solver()
 {
     if (_loggerEnabled)
     {
-        glog::shutdown();
+        shutdown_logger();
     }
-}
-
-void distributed_solver::enable_logging(const std::string& logFilePath, bool writeToConsole)
-{
-    _loggerEnabled = true;
-    glog::init_file_logger(logFilePath, writeToConsole);
-}
-
-void distributed_solver::disable_logging()
-{
-    _loggerEnabled = false;
-    glog::disable();
 }
 
 void distributed_solver::evolve(const pagmo::problem& problem, const std::vector<pagmo::algorithm>& algorithms,
@@ -241,7 +229,7 @@ pagmo::vector_double distributed_solver::wait_until_completion()
 
     _archipelago.wait_check();
 
-    glog::get()->info("Main Archipelago: Evolution finished");
+    spdlog::info("Main Archipelago: Evolution finished");
     pagmo::vector_double bestIndividual = get_best_individual();
 
     std::string bestStr = "[";
@@ -251,7 +239,7 @@ pagmo::vector_double distributed_solver::wait_until_completion()
         bestStr += ", ";
     }
     bestStr += "]";
-    glog::get()->debug("Best individual: {}", bestStr);
+    spdlog::debug("Best individual: {}", bestStr);
 
     return bestIndividual;
 }

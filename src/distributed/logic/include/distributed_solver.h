@@ -8,7 +8,7 @@ enum class load_balancing_strategy
     BY_PERFORMANCE
 };
 
-class distributed_solver
+class distributed_solver : public logger_control
 {
     load_balancing_strategy _loadBalancingStrategy;
 
@@ -49,12 +49,6 @@ public:
 
     ~distributed_solver();;
 
-    void enable_logging(
-        const std::string& logFilePath = glog::generate_log_filename("logs/distributed_controller.log"),
-        bool writeToConsole = true);
-
-    void disable_logging();
-
     void evolve(const pagmo::problem& problem,
                 const std::vector<pagmo::algorithm>& algorithms,
                 size_t populationSize,
@@ -79,4 +73,10 @@ public:
     size_t get_current_worker_count();
 
     size_t get_expected_worker_count() const;
+
+protected:
+    std::string get_default_log_name() const override
+    {
+        return "./logs/solver";
+    }
 };

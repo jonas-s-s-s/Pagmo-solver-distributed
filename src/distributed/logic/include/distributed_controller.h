@@ -3,6 +3,7 @@
 #include <unordered_set>
 
 #include "controller_settings.h"
+#include "logger_control.h"
 #include "router_socket.h"
 #include "settings.h"
 #include "worker_info_repository.h"

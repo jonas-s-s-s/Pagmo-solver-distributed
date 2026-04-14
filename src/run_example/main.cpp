@@ -1,4 +1,4 @@
-#include "global_logger.h"
+#include "logger_init.h"
 #include "distributed_controller.h"
 #include "distributed_solver.h"
 #include "distributed_worker.h"
@@ -20,7 +20,7 @@
 //####################################################
 
 void benchmark_controller_task(const std::string& address, const size_t expectedWorkerCount,
-                               const load_balancing_strategy loadBalancingStrategy, const std::string& localCacheDir)
+                               const load_balancing_strategy loadBalancingStrategy, const std::string& localCacheDir, bool disableLogging)
 {
     udp_registry::get().set_local_cache_dir(localCacheDir);
 
@@ -41,7 +41,7 @@ void benchmark_controller_task(const std::string& address, const size_t expected
 }
 
 void default_controller_task(const std::string& address, const size_t expectedWorkerCount,
-                             const load_balancing_strategy loadBalancingStrategy, const std::string& localCacheDir)
+                             const load_balancing_strategy loadBalancingStrategy, const std::string& localCacheDir, bool disableLogging)
 {
     udp_registry::get().set_local_cache_dir(localCacheDir);
 
@@ -52,6 +52,11 @@ void default_controller_task(const std::string& address, const size_t expectedWo
     algo.set_verbosity(0);
 
     distributed_solver ds{address, expectedWorkerCount, loadBalancingStrategy};
+    if (!disableLogging)
+    {
+        ds.enable_logging();
+    }
+
     ds.wait_until_workers_connect();
 
     ds.evolve(prob, {algo}, 1000);
@@ -69,73 +74,83 @@ void default_controller_task(const std::string& address, const size_t expectedWo
 
 void run_controller(const std::string& address, const size_t expectedWorkerCount,
                     const load_balancing_strategy loadBalancingStrategy, const std::string& localCacheDir,
-                    const std::function<void(std::string, size_t, load_balancing_strategy, std::string)>& runFunc)
+                    const std::function<void(std::string, size_t, load_balancing_strategy, std::string,bool)>& runFunc, bool disableLogging)
 {
+    runFunc(address, expectedWorkerCount, loadBalancingStrategy, localCacheDir, disableLogging);
+/*
+
+
     std::string errMsg = "Aborting distributed solver, an exception occurred: ";
     try
     {
-        runFunc(address, expectedWorkerCount, loadBalancingStrategy, localCacheDir);
+        runFunc(address, expectedWorkerCount, loadBalancingStrategy, localCacheDir, disableLogging);
     }
     catch (const std::exception& e)
     {
         errMsg += e.what();
-        glog::get()->critical("{}", errMsg);
+        spdlog::critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (const std::string& e)
     {
         errMsg += e;
-        glog::get()->critical("{}", errMsg);
+        spdlog::critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (const char* e)
     {
         errMsg += e;
-        glog::get()->critical("{}", errMsg);
+        spdlog::critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (...)
     {
         errMsg += "unknown exception type";
-        glog::get()->critical("{}", errMsg);
+        spdlog::critical("{}", errMsg);
         throw std::runtime_error(errMsg);
-    }
+    }  */
 }
 
 void run_worker(const std::string& address, worker_mode mode,
-                size_t minIslandPopSize, const std::string& localCacheDir)
+                size_t minIslandPopSize, const std::string& localCacheDir, bool disableLogging)
 {
     std::string errMsg = "Aborting distributed worker, an exception occurred: ";
     try
     {
         distributed_worker worker{address, mode, minIslandPopSize};
+        if (!disableLogging)
+        {
+            worker.enable_logging();
+        }
+
         udp_registry::get().set_local_cache_dir(localCacheDir);
         udp_registry::get().register_udp_provider(
             [&worker](const std::string& libName) { return worker.get_dll_from_controller(libName); });
-        for (;;) worker.client_loop();
+        for (;;)
+            worker.client_loop();
     }
     catch (const std::exception& e)
     {
         errMsg += e.what();
-        glog::get()->critical("{}", errMsg);
+        spdlog::critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (const std::string& e)
     {
         errMsg += e;
-        glog::get()->critical("{}", errMsg);
+        spdlog::critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (const char* e)
     {
         errMsg += e;
-        glog::get()->critical("{}", errMsg);
+        spdlog::critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
     catch (...)
     {
         errMsg += "unknown exception type";
-        glog::get()->critical("{}", errMsg);
+        spdlog::critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
 }
@@ -282,9 +297,9 @@ int main(int argc, char* argv[])
     }
     const auto& ma = mainArgsOpt.value();
 
-    if (!ma.disableLogging)
+    if (ma.disableLogging)
     {
-        glog::init_file_logger();
+        use_null_logger();
     }
 
     // Run controller / worker
@@ -303,7 +318,7 @@ int main(int argc, char* argv[])
                 ma.workers,
                 lbs,
                 ma.cacheDir.empty() ? ma.defaultCacheDirController : ma.cacheDir,
-                controllerTask
+                controllerTask, ma.disableLogging
             );
         }
         else
@@ -316,20 +331,14 @@ int main(int argc, char* argv[])
                 ma.address.empty() ? ma.defaultAddressWorker : ma.address,
                 wm,
                 ma.minPopSize,
-                ma.cacheDir.empty() ? ma.defaultCacheDirWorker : ma.cacheDir
+                ma.cacheDir.empty() ? ma.defaultCacheDirWorker : ma.cacheDir, ma.disableLogging
             );
         }
     }
     catch (const std::exception& e)
     {
-        if (!ma.disableLogging)
-            glog::shutdown();
-
         return 2;
     }
-
-    if (!ma.disableLogging)
-        glog::shutdown();
 
     return 0;
 }

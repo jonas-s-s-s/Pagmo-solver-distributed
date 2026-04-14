@@ -4,7 +4,8 @@
 #include <thread>
 
 #include "dealer_socket.h"
-#include "global_logger.h"
+#include "logger_control.h"
+#include "logger_init.h"
 #include "zmq.hpp"
 #include "MsgType.h"
 #include "pair_socket.h"
@@ -21,7 +22,7 @@ enum class worker_mode
     ARCHIPELAGO_BASED,
 };
 
-class distributed_worker
+class distributed_worker : public logger_control
 {
     // Worker's settings (saved to FS)
     settings<worker_settings> _settings;
@@ -103,12 +104,6 @@ public:
                                 const std::filesystem::path& settingsFilePath = "./worker_settings.xml"
     );
 
-    void enable_logging(
-        const std::string& logFilePath = glog::generate_log_filename("logs/distributed_worker.log"),
-        bool writeToConsole = true);
-
-    void disable_logging();
-
     void client_loop();
     void run_client();
 
@@ -120,4 +115,10 @@ public:
     * @return DLL file as vector of bytes, or empty optional if not found
     */
     std::optional<std::vector<std::byte>> get_dll_from_controller(const std::string& lib_name);
+
+protected:
+    std::string get_default_log_name() const override
+    {
+        return "./logs/worker";
+    }
 };
