@@ -2,6 +2,7 @@
 
 #include "logger_init.h"
 #include "distributed_island.h"
+#include "number_utils.h"
 #include "population_tools.h"
 #include "pagmo/topologies/fully_connected.hpp"
 #include "pagmo/utils/multi_objective.hpp"
@@ -38,12 +39,6 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
         return alg;
     };
 
-    // Helper lambda - safely compute average preventing division by zero
-    auto safeAvg = [](const uint64_t processed, const uint64_t time) -> double
-    {
-        return (time > 0) ? (static_cast<double>(processed) / static_cast<double>(time)) : 0;
-    };
-
     // Prepare worker-related vars
     auto& repo = _controller.get_worker_info_repository();
     std::unordered_set<std::string> connectedWorkers = repo.get_connected_workers();
@@ -54,7 +49,7 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
     {
         size_t islandPop = std::max(minIslandPopSize, populationSize / islandCount);
         // Make sure it's divisible by 4 (some algorithms require this)
-        islandPop += 4 - islandPop % 4;
+        islandPop = ceil_to_multiple(islandPop, 4);
 
         for (size_t i = 0; i < islandCount; ++i)
         {
@@ -86,7 +81,7 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
             {
                 const auto& wInfo = repo.get_worker_info(workerId);
 
-                const double wTotalAvg = safeAvg(
+                const double wTotalAvg = safe_divide(
                     wInfo->totalStats.processedPopulation,
                     wInfo->totalStats.workTime
                 );
@@ -95,7 +90,7 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
                 if (wInfo->statsByAlgorithm.contains(algoName))
                 {
                     const auto& algoStats = wInfo->statsByAlgorithm.at(algoName);
-                    wAlgoAvg = safeAvg(
+                    wAlgoAvg = safe_divide(
                         algoStats.processedPopulation,
                         algoStats.workTime
                     );
@@ -149,7 +144,7 @@ std::vector<std::tuple<size_t, size_t, std::string, const pagmo::algorithm&>> di
             const auto workerPopSize = static_cast<size_t>(static_cast<double>(populationSize) * workerPerfPercentage);
             auto finalWorkerPopSize = std::max(minIslandPopSize, workerPopSize);
             // Make sure it's divisible by 4 (some algorithms require this)
-            finalWorkerPopSize +=  4 - finalWorkerPopSize % 4;
+            finalWorkerPopSize = ceil_to_multiple(finalWorkerPopSize, 4);
 
             spdlog::debug("{} provides {}% of total worker cluster processing power", workerId, workerPerfPercentage * 100);
             spdlog::debug("{} has been assigned {} population size", workerId, finalWorkerPopSize);
