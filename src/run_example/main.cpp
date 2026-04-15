@@ -76,10 +76,6 @@ void run_controller(const std::string& address, const size_t expectedWorkerCount
                     const load_balancing_strategy loadBalancingStrategy, const std::string& localCacheDir,
                     const std::function<void(std::string, size_t, load_balancing_strategy, std::string,bool)>& runFunc, bool disableLogging)
 {
-    runFunc(address, expectedWorkerCount, loadBalancingStrategy, localCacheDir, disableLogging);
-/*
-
-
     std::string errMsg = "Aborting distributed solver, an exception occurred: ";
     try
     {
@@ -108,7 +104,7 @@ void run_controller(const std::string& address, const size_t expectedWorkerCount
         errMsg += "unknown exception type";
         spdlog::critical("{}", errMsg);
         throw std::runtime_error(errMsg);
-    }  */
+    }
 }
 
 void run_worker(const std::string& address, worker_mode mode,
