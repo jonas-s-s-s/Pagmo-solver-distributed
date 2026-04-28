@@ -20,8 +20,6 @@ class distributed_solver : public logger_control
     std::vector<pagmo::vector_double> _initialHints{};
     void _set_island_hints(pagmo::island& isl) const;
 
-    bool _loggerEnabled = false;
-
     /**
      * Generates a list of input parameters for each island
      * @param islandCount The number of islands we want to use

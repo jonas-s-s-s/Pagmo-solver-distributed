@@ -166,10 +166,6 @@ distributed_solver::distributed_solver(const std::string& controllerAddress, con
 
 distributed_solver::~distributed_solver()
 {
-    if (_loggerEnabled)
-    {
-        shutdown_logger();
-    }
 }
 
 void distributed_solver::evolve(const pagmo::problem& problem, const std::vector<pagmo::algorithm>& algorithms,

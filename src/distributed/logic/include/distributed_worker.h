@@ -83,7 +83,6 @@ class distributed_worker : public logger_control
 
     worker_mode _workerMode;
 
-    bool _loggerEnabled = false;
 public:
     /**
      * Constructs a distributed worker, which will connect and accept work from a specified controller
