@@ -2,48 +2,45 @@
 
 #include <string>
 
-#include <pagmo/island.hpp>
 
 #include "dealer_socket.h"
 
-namespace pagmo
+
+class distributed_island
 {
-    class distributed_island
-    {
-        // We need to wrap there in shared ptr to make this class copy and move constructable
-        // Or else it won't be recognized as UDI by Pagmo
-        std::shared_ptr<zmq::context_t> _ctx;
-        std::shared_ptr<distributed::dealer_socket> _dealerSocket;
+    // We need to wrap there in shared ptr to make this class copy and move constructable
+    // Or else it won't be recognized as UDI by Pagmo
+    std::shared_ptr<zmq::context_t> _ctx;
+    std::shared_ptr<distributed::dealer_socket> _dealerSocket;
 
-        std::string _islandId;
+    std::string _islandId;
 
-        // Controller will try to assign worker identified by this ID to this island
-        std::string _preferredWorkerId;
-        // Cycle count for the worker's archipelago evolve
-        size_t _cycleCount = 1;
+    // Controller will try to assign worker identified by this ID to this island
+    std::string _preferredWorkerId;
+    // Cycle count for the worker's archipelago evolve
+    size_t _cycleCount = 1;
 
-        static std::tuple<algorithm, population> _load_pagmo_pop_and_algo(const island& isl);
+    static std::tuple<pagmo::algorithm, pagmo::population> _load_pagmo_pop_and_algo(const pagmo::island& isl);
 
-    public:
-        void set_preferred_worker(const std::string& preferredWorkerId);
+public:
+    void set_preferred_worker(const std::string& preferredWorkerId);
 
-        void set_cycle_count(const size_t cycleCount);
+    void set_cycle_count(const size_t cycleCount);
 
-        void clear_preferred_worker();
+    void clear_preferred_worker();
 
-        void clear_cycle_count();
+    void clear_cycle_count();
 
-        // Default ctor.
-        distributed_island();
+    // Default ctor.
+    distributed_island();
 
-        distributed_island(const std::string& preferred_worker_id, size_t cycle_count);
+    distributed_island(const std::string& preferred_worker_id, size_t cycle_count);
 
-        // Island's name.
-        std::string get_name() const;
-        // Extra info.
-        std::string get_extra_info() const;
+    // Island's name.
+    std::string get_name() const;
+    // Extra info.
+    std::string get_extra_info() const;
 
-        // run_evolve implementation.
-        void run_evolve(island&) const;
-    };
-} // namespace pagmo
+    // run_evolve implementation.
+    void run_evolve(pagmo::island&) const;
+};

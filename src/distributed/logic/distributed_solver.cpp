@@ -192,7 +192,7 @@ void distributed_solver::evolve(const pagmo::problem& problem, const std::vector
     {
         const auto [islandPopSize,islandCycleCount,preferredWorker, algorithm] = workPlan.at(i);
 
-        pagmo::distributed_island dist_island{preferredWorker, islandCycleCount};
+        distributed_island dist_island{preferredWorker, islandCycleCount};
         auto isl = pagmo::island{dist_island, algorithm, problem, islandPopSize};
         // We set the initial population to this island (hints) if there are any
         _set_island_hints(isl);
