@@ -27,7 +27,7 @@ class distributed_controller
     int _heartbeat_interval;
     // Peer is considered dead if no ping is received after this interval
     int _heartbeat_timeout;
-    // Maximal SYN packet interval (for when controller is not reachable) exponentially increases to this value
+    // Maximal SYN packet interval (for when worker is not reachable) exponentially increases to this value
     int _reconnect_ivl_max;
 
     zmq::context_t _ctx;
