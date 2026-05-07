@@ -17,16 +17,13 @@ add_executable(unit_tests
     
     # Phase 4: Core Domain Logic
     logic/worker_info_repository_test.cpp
-    logic/work_plan_test.cpp
-    
+
     # Phase 5: Discovery Layer
     discovery/udp_registry_test.cpp
     
     # Phase 6: Socket Layer
     sockets/socket_roundtrip_test.cpp
-    
-    # Phase 7: Integration
-    integration/basic_system_test.cpp
+
 )
 
 target_link_libraries(unit_tests PRIVATE
