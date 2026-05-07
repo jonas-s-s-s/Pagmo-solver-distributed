@@ -17,6 +17,11 @@ endif()
 message(STATUS "Distributed solver runtime output directory: ${DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR}")
 
 #########################################################################################
+# CATCH2 unit testing framework
+add_subdirectory(./external/Catch2)
+#########################################################################################
+
+#########################################################################################
 # EIGEN 3
 execute_process(
         COMMAND cmake -S . -B ./build/ -G ${CMAKE_GENERATOR}
@@ -73,6 +78,7 @@ set_target_properties(pagmo
         LIBRARY_OUTPUT_DIRECTORY "${DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR}"
         RUNTIME_OUTPUT_DIRECTORY "${DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR}"
 )
+
 #########################################################################################
 # libzmq
 # IMPORTANT: CMake generation step ends with ninja error if this is not set to OFF
@@ -94,6 +100,8 @@ add_subdirectory(./external/cppzmq)
 #########################################################################################
 
 add_subdirectory(src)
+# Perhaps add some if statement here to add tests conditionally
+add_subdirectory(test)
 
 # Pagmo deps:
 # Boost (must be in env path)
