@@ -45,20 +45,20 @@
   ],
   "buildPresets": [
     {
-      "name": "dist_solver-test: Debug",
-      "displayName": "Build dist_solver-test",
+      "name": "dist_solver-build: Debug",
+      "displayName": "Build dist_solver-build",
       "configurePreset": "dist_solver-Debug",
       "jobs": 9
     },
     {
-      "name": "dist_solver-test: RelWithDebInfo",
-      "displayName": "Build dist_solver-test",
+      "name": "dist_solver-build: RelWithDebInfo",
+      "displayName": "Build dist_solver-build",
       "configurePreset": "dist_solver-RelWithDebInfo",
       "jobs": 9
     },
     {
-      "name": "dist_solver-test: Release",
-      "displayName": "Build dist_solver-test",
+      "name": "dist_solver-build: Release",
+      "displayName": "Build dist_solver-build",
       "configurePreset": "dist_solver-Release",
       "jobs": 9
     }

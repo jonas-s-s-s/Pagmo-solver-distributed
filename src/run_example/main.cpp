@@ -171,7 +171,8 @@ void print_help(char **argv) {
             "  --mode         <name>  (default: ARCHIPELAGO_BASED)\n"
             "  --min-pop-size <n>     (default: 80)\n"
             "  --cache-dir    <dir>   (default: worker_cache)\n"
-            "  --no-worker-isolation  Disable per-worker isolated cache and settings\n"
+            "  --worker-dir   <name>  Per-worker isolated subdirectory name (default: auto-generated UUID)\n"
+            "  --no-worker-isolation  Disable per-worker isolated subdirectory with cache and settings\n"
             << std::endl;
 }
 
@@ -195,6 +196,7 @@ struct main_args {
     bool disableLogging = false;
 
     bool noWorkerDirectory = false;
+    std::string workerDir = "";
 };
 
 std::optional<main_args> parse_main_args(const int argc, char **argv) {
@@ -233,6 +235,8 @@ std::optional<main_args> parse_main_args(const int argc, char **argv) {
             mainArgs.minPopSize = std::stoul(nextArg());
         } else if (a == "--cache-dir") {
             mainArgs.cacheDir = nextArg();
+        } else if (a == "--worker-dir") {
+            mainArgs.workerDir = nextArg();
         } else if (a == "--no-worker-isolation") {
             mainArgs.noWorkerDirectory = true;
         } else {
@@ -295,8 +299,8 @@ int main(int argc, char *argv[]) {
                 settingsFile = baseCacheDir / "worker_settings.xml";
             } else {
                 // Isolated worker directory
-                const std::string workerId = uuid::v4::UUID::New().String();
-                const std::filesystem::path workerRoot = baseCacheDir / ("worker_" + workerId);
+                const std::string workerId = ma.workerDir.empty() ? ("worker_" + uuid::v4::UUID::New().String()) : ma.workerDir;
+                const std::filesystem::path workerRoot = baseCacheDir / workerId;
                 workerCacheDir = workerRoot / "cache";
                 settingsFile = workerRoot / "worker_settings.xml";
                 std::filesystem::create_directories(workerCacheDir);
