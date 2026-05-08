@@ -1,5 +1,6 @@
 #pragma once
 #include <optional>
+#include <vector>
 
 #include "lru_cache.h"
 #include "sha256.h"
