@@ -188,7 +188,7 @@ struct main_args
 
     std::string address = ""; // Set by user
     std::string defaultAddressWorker = "tcp://localhost:5000";
-    std::string defaultAddressController = "tcp://localhost:5000";
+    std::string defaultAddressController = "tcp://0.0.0.0:5000";
     size_t workers = 2;
 
     std::string strategy = "BY_PERFORMANCE";
