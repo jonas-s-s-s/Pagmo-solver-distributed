@@ -43,4 +43,11 @@ target_include_directories(unit_tests PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
 )
 
-catch_discover_tests(unit_tests)
+# So the exe is besides all other required DLLs
+set_target_properties(unit_tests PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
+
+catch_discover_tests(unit_tests
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+)
