@@ -17,11 +17,6 @@ endif()
 message(STATUS "Distributed solver runtime output directory: ${DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR}")
 
 #########################################################################################
-# CATCH2 unit testing framework
-add_subdirectory(./external/Catch2)
-#########################################################################################
-
-#########################################################################################
 # EIGEN 3
 execute_process(
         COMMAND cmake -S . -B ./build/ -G ${CMAKE_GENERATOR}
@@ -97,6 +92,13 @@ set_target_properties(libzmq
 # cppzmq
 set(CPPZMQ_BUILD_TESTS OFF)
 add_subdirectory(./external/cppzmq)
+#########################################################################################
+
+#########################################################################################
+# CATCH2 unit testing framework
+if(NOT TARGET Catch2::Catch2 AND NOT TARGET Catch2::Catch2WithMain)
+    add_subdirectory(external/Catch2)
+endif()
 #########################################################################################
 
 add_subdirectory(src)

@@ -2,7 +2,11 @@ include(CTest)
 enable_testing()
 include(Catch)
 
-add_executable(unit_tests
+if(NOT DEFINED DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR)
+    set(DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin")
+endif()
+
+add_executable(unit_tests_distributed_solver
     # Phase 1: Foundation Data Structures
     discovery/lru_cache_test.cpp
     discovery/hash_cache_test.cpp
@@ -26,7 +30,7 @@ add_executable(unit_tests
 
 )
 
-target_link_libraries(unit_tests PRIVATE
+target_link_libraries(unit_tests_distributed_solver PRIVATE
     distributed_discovery
     distributed_logic
     distributed_messages
@@ -39,15 +43,15 @@ target_link_libraries(unit_tests PRIVATE
     libzmq
 )
 
-target_include_directories(unit_tests PRIVATE
+target_include_directories(unit_tests_distributed_solver PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/../src
 )
 
 # So the exe is besides all other required DLLs
-set_target_properties(unit_tests PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+set_target_properties(unit_tests_distributed_solver PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR}"
 )
 
-catch_discover_tests(unit_tests
-        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}/bin
+catch_discover_tests(unit_tests_distributed_solver
+        WORKING_DIRECTORY "${DISTRIBUTED_SOLVER_RUNTIME_OUTPUT_DIR}"
 )
