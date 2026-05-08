@@ -75,6 +75,14 @@ set_target_properties(pagmo
 )
 
 #########################################################################################
+# CATCH2 unit testing framework
+if(NOT TARGET Catch2::Catch2 AND NOT TARGET Catch2::Catch2WithMain)
+    add_subdirectory(external/Catch2)
+endif()
+list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/external/Catch2/extras")
+#########################################################################################
+
+#########################################################################################
 # libzmq
 # IMPORTANT: CMake generation step ends with ninja error if this is not set to OFF
 set(ENABLE_PRECOMPILED  OFF CACHE BOOL "" FORCE)
@@ -92,13 +100,6 @@ set_target_properties(libzmq
 # cppzmq
 set(CPPZMQ_BUILD_TESTS OFF)
 add_subdirectory(./external/cppzmq)
-#########################################################################################
-
-#########################################################################################
-# CATCH2 unit testing framework
-if(NOT TARGET Catch2::Catch2 AND NOT TARGET Catch2::Catch2WithMain)
-    add_subdirectory(external/Catch2)
-endif()
 #########################################################################################
 
 add_subdirectory(src)
