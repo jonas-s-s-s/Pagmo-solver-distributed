@@ -98,7 +98,7 @@ set_target_properties(libzmq
 
 #########################################################################################
 # cppzmq
-set(CPPZMQ_BUILD_TESTS OFF)
+set(CPPZMQ_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 add_subdirectory(./external/cppzmq)
 #########################################################################################
 
