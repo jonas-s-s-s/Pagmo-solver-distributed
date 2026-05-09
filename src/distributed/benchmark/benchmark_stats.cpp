@@ -1,6 +1,8 @@
 #include "benchmark_stats.h"
 
 #include <fstream>
+#include <iomanip>
+#include <sstream>
 
 #include "benchmark_results_html.h"
 #include "csv_conversion.h"
@@ -11,6 +13,13 @@ std::string benchmark_stats::_get_current_stats_csv()
     std::string output;
     const size_t nObj = _problem.get_nobj();
     const bool isMultiObjective = nObj > 1;
+
+    auto format_double = [](const double value)
+    {
+        std::ostringstream ss;
+        ss << std::fixed << std::setprecision(CSV_DOUBLE_PRECISION) << value;
+        return ss.str();
+    };
 
     // 1) Calculate fitnesses of all data points
     std::vector<pagmo::vector_double> fitnesses;
@@ -92,9 +101,7 @@ std::string benchmark_stats::_get_current_stats_csv()
                 percentageDecline = difference / bestIndividualFitness[j];
             }
 
-            std::string percentage = std::to_string(percentageDecline * 100);
-            percentage = percentage.substr(0, percentage.find('.') + 3);
-            output += percentage + "%";
+            output += format_double(percentageDecline * 100) + "%";
             if (j + 1 < bestIndividualFitness.size())
             {
                 output += ";";
@@ -103,15 +110,15 @@ std::string benchmark_stats::_get_current_stats_csv()
         output += "\"";
 
         // Append elapsed time
-        output += "," + std::to_string(sortedElapsedTimes[i]);
+        output += "," + format_double(sortedElapsedTimes[i]);
 
         // Append MO specific columns
         if (isMultiObjective && !ranks.empty())
         {
             output += "," + std::to_string(ranks[i]) +
                 "," + std::to_string(domCounts[i]) +
-                "," + (std::isinf(crowdDists[i]) ? "Inf" : std::to_string(crowdDists[i]).substr(0, 5)) +
-                "," + std::to_string(hvContributions[i]).substr(0, 8);
+                "," + (std::isinf(crowdDists[i]) ? "Inf" : format_double(crowdDists[i])) +
+                "," + format_double(hvContributions[i]);
         }
 
         output += "\n";
