@@ -11,6 +11,9 @@
  */
 class benchmark_stats
 {
+    // Controls how many decimal places are preserved in CSV output values
+    static constexpr int CSV_DOUBLE_PRECISION = 16;
+
     pagmo::problem _problem;
 
     std::vector<pagmo::vector_double> _dataPoints;
