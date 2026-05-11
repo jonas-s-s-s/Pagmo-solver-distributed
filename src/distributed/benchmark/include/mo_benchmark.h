@@ -30,5 +30,5 @@ void run_mo_benchmark(distributed_solver& ds,
                       benchmark_stats& bench,
                       bool outputHtml = true,
                       bool outputCsv  = true,
-                      size_t popSize  = 500,
-                      size_t genCount = 500);
+                      size_t popSize  = 2400,
+                      size_t genCount = 1000);
