@@ -46,35 +46,35 @@ void run_so_benchmark(distributed_solver& ds, benchmark_stats& bench, const bool
 
     std::cout << std::endl << "Running pagmo::schwefel..." << std::endl;
     {
-        const pagmo::problem prob{pagmo::schwefel(2)};
+        const pagmo::problem prob{pagmo::schwefel(3)};
         bench.set_problem(prob);
         benchmark_compare_so(ds, prob, bench, popSize, genCount);
     }
 
     std::cout << std::endl << "Running pagmo::rosenbrock..." << std::endl;
     {
-        pagmo::problem prob{pagmo::rosenbrock(30)};
+        pagmo::problem prob{pagmo::rosenbrock(40)};
         bench.set_problem(prob);
         benchmark_compare_so(ds, prob, bench, popSize, genCount);
     }
 
     std::cout << std::endl << "Running pagmo::rastrigin..." << std::endl;
     {
-        pagmo::problem prob{pagmo::rastrigin(30)};
+        pagmo::problem prob{pagmo::rastrigin(40)};
         bench.set_problem(prob);
         benchmark_compare_so(ds, prob, bench, popSize, genCount);
     }
 
     std::cout << std::endl << "Running pagmo::ackley..." << std::endl;
     {
-        pagmo::problem prob{pagmo::ackley(30)};
+        pagmo::problem prob{pagmo::ackley(40)};
         bench.set_problem(prob);
         benchmark_compare_so(ds, prob, bench, popSize, genCount);
     }
 
     std::cout << std::endl << "Running pagmo::griewank..." << std::endl;
     {
-        pagmo::problem prob{pagmo::griewank(30)};
+        pagmo::problem prob{pagmo::griewank(40)};
         bench.set_problem(prob);
         benchmark_compare_so(ds, prob, bench, popSize, genCount);
     }

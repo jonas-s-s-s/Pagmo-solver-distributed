@@ -5,7 +5,7 @@ void benchmark_compare_runner(distributed_solver& ds, const pagmo::problem& prob
 {
     // First run the metasolver
     bench.start_timer();
-    ds.evolve(prob, algs, popSize);
+    ds.evolve(prob, algs, popSize, 10);
     ds.wait_until_completion();
     bench.add_data_point(
         ds.get_best_individual(),
@@ -22,7 +22,7 @@ void benchmark_compare_runner(distributed_solver& ds, const pagmo::problem& prob
 
         // Using only ONE algorithm
         bench.start_timer();
-        ds.evolve(prob, {currentAlg}, popSize);
+        ds.evolve(prob, {currentAlg}, popSize, 10);
         ds.wait_until_completion();
         bench.add_data_point(
             ds.get_best_individual(),

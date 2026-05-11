@@ -41,33 +41,13 @@ void run_mo_benchmark(distributed_solver& ds, benchmark_stats& bench, const bool
     std::cout << "\nRunning multi-objective benchmark...\n";
 
     // ZDT problem suite
-    for (unsigned id = 1; id <= 6; ++id)
+    for (unsigned id = 1; id <= 4; ++id)
     {
         std::cout << "\nRunning pagmo::zdt(" << id << ")...\n";
         pagmo::problem prob{pagmo::zdt(id, 30)};
         bench.set_problem(prob);
         benchmark_compare_mo(ds, prob, bench, popSize, genCount);
     }
-
-    /*
-    // DTLZ problem suite
-    for (unsigned id = 1; id <= 7; ++id)
-    {
-        std::cout << "\nRunning pagmo::dtlz(" << id << ")...\n";
-        pagmo::problem prob{pagmo::dtlz(id, 12, 3)};
-        bench.set_problem(prob);
-        benchmark_compare_mo(ds, prob, bench, popSize, genCount);
-    }
-
-    // WFG problem suite
-    for (unsigned id = 1; id <= 9; ++id)
-    {
-        std::cout << "\nRunning pagmo::wfg(" << id << ")...\n";
-        pagmo::problem prob{pagmo::wfg(id, 8, 3, 2)};
-        bench.set_problem(prob);
-        benchmark_compare_mo(ds, prob, bench, popSize, genCount);
-    }
-    */
 
     // Save benchmark results into the fs
     if (outputCsv)
