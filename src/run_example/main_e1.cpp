@@ -13,7 +13,7 @@ int main()
     benchmark_stats bench{problem};
     int gens = 750;
     pagmo::algorithm algo{pagmo::de(gens)};
-    // 1) Running DE on 3 worker nodes
+    // 1) Running DE on 3 worker localhost nodes
     {
         distributed_solver solver{
             "tcp://0.0.0.0:5001",
