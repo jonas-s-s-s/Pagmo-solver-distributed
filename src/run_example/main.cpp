@@ -22,19 +22,18 @@
 
 void benchmark_controller_task(const std::string &address, const size_t expectedWorkerCount,
                                const load_balancing_strategy loadBalancingStrategy, const std::string &localCacheDir,
-                               bool disableLogging) {
+                               bool disableLogging, bool runSO, bool runMO) {
     udp_registry::get().set_local_cache_dir(localCacheDir);
 
-    // Single-objective benchmark
-    {
-        // We need exactly the same number of workers as there is SO algorithms
+    if (runSO) {
+        // Single-objective benchmark
         distributed_solver ds{address, get_so_algorithm_count(), loadBalancingStrategy};
         benchmark_stats bench{};
         run_so_benchmark(ds, bench);
     }
 
-    // Multi-objective benchmark
-    {
+    if (runMO) {
+        // Multi-objective benchmark
         distributed_solver ds{address, get_mo_algorithm_count(), loadBalancingStrategy};
         benchmark_stats bench{};
         run_mo_benchmark(ds, bench);
@@ -157,8 +156,9 @@ void print_help(char **argv) {
             "  " << fName << " --worker     [options]\n"
             "\n"
             "Common options:\n"
-            "  --disable-logging"
-            "  --benchmark"
+            "  --disable-logging\n"
+            "  --benchmark-so  Run single-objective benchmarks\n"
+            "  --benchmark-mo  Run multi-objective benchmarks\n"
             "\n"
             "Controller options:\n"
             "  --address      <addr>  (default: tcp://0.0.0.0:5000)\n"
@@ -197,6 +197,9 @@ struct main_args {
 
     bool noWorkerDirectory = false;
     std::string workerDir = "";
+
+    bool runSOBenchmark = false;
+    bool runMOBenchmark = false;
 };
 
 std::optional<main_args> parse_main_args(const int argc, char **argv) {
@@ -216,6 +219,10 @@ std::optional<main_args> parse_main_args(const int argc, char **argv) {
         } else if (a == "--controller") {
             mainArgs.isController = true;
             modeSet = true;
+        } else if (a == "--benchmark-so") {
+            mainArgs.runSOBenchmark = true;
+        } else if (a == "--benchmark-mo") {
+            mainArgs.runMOBenchmark = true;
         } else if (a == "--benchmark") {
             mainArgs.runBenchmark = true;
         } else if (a == "--disable-logging") {
@@ -271,18 +278,26 @@ int main(int argc, char *argv[]) {
     // Run controller / worker
     try {
         if (ma.isController) {
-            const auto controllerTask = (ma.runBenchmark) ? benchmark_controller_task : default_controller_task;
-
             const load_balancing_strategy lbs = (ma.strategy == "ALL_ISLANDS_EQUAL")
                                                     ? load_balancing_strategy::ALL_ISLANDS_EQUAL
                                                     : load_balancing_strategy::BY_PERFORMANCE;
+
+            auto controllerTaskWrapper = [&](const std::string &addr, size_t count, load_balancing_strategy strat,
+                                             const std::string &cache, bool log) {
+                if (ma.runSOBenchmark || ma.runMOBenchmark) {
+                    benchmark_controller_task(addr, count, strat, cache, log, ma.runSOBenchmark, ma.runMOBenchmark);
+                } else {
+                    default_controller_task(addr, count, strat, cache, log);
+                }
+            };
 
             run_controller(
                 ma.address.empty() ? ma.defaultAddressController : ma.address,
                 ma.workers,
                 lbs,
                 ma.cacheDir.empty() ? ma.defaultCacheDirController : ma.cacheDir,
-                controllerTask, ma.disableLogging
+                controllerTaskWrapper,
+                ma.disableLogging
             );
         } else {
             const worker_mode wm = (ma.workerMode == "ARCHIPELAGO_BASED")
