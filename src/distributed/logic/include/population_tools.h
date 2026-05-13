@@ -102,7 +102,7 @@ inline std::vector<pagmo::pop_size_t> get_best_N_individuals_indexes(const pagmo
     // Individuals in a population need to be sorted differently depending on if it's a multi-objective or single-objective problem
     if (isMultiObjective)
     {
-        // TODO: select_best_N_mo doesn't ensure that "rank 0" solutions are before the "rank 1" solutions, is this intended?
+        // Select_best_N_mo doesn't ensure that "rank 0" solutions are before the "rank 1" solutions, is this intended?
         //bestIndividualIndexes = pagmo::select_best_N_mo(allFitness, N);
         auto sortedIndexes = pagmo::sort_population_mo(allFitness);
         bestIndividualIndexes.assign(sortedIndexes.begin(), sortedIndexes.begin() + std::min(N, sortedIndexes.size()));

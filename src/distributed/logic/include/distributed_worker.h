@@ -95,11 +95,11 @@ public:
      * @param minIslandPopSize Minimal population size of an island when using archipelago based worker
      */
     explicit distributed_worker(const std::string& controllerAddress,
-                                worker_mode workerMode = worker_mode::ARCHIPELAGO_BASED, //TODO: CHANGE?
+                                worker_mode workerMode = worker_mode::ARCHIPELAGO_BASED,
                                 size_t minIslandPopSize = 80,
-                                int heartbeatInterval = 1000,
-                                int heartbeatTimeout = 3000000, // TODO: CHANGE
-                                int reconnectIvlMax = 10000,
+                                int heartbeatInterval = 2000, // 2 seconds
+                                int heartbeatTimeout = 300000, // 5 minutes
+                                int reconnectIvlMax = 10000, // 10 seconds
                                 const std::filesystem::path& settingsFilePath = "./worker_settings.xml"
     );
 

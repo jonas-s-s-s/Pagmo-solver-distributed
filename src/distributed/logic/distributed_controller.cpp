@@ -229,7 +229,7 @@ distributed_controller::distributed_controller(const std::string& controllerAddr
         throw e;
     }
 
-    // TODO: Possibly define the ipc:// address as some global constant? Make the address unique per process so we can run multiple controllers?
+    // Possibly define the ipc:// address as some global constant? Make the address unique per process so we can run multiple controllers?
     _islandsSocket.bind("ipc://distributed_controller_islands_socket");
 }
 

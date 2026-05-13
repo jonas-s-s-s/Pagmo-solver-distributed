@@ -20,19 +20,22 @@
 //# DIFFERENT CONTROLLER TASKS
 //####################################################
 
-void benchmark_controller_task(const std::string &address, const size_t expectedWorkerCount,
-                               const load_balancing_strategy loadBalancingStrategy, const std::string &localCacheDir,
-                               bool disableLogging, bool runSO, bool runMO) {
+void benchmark_controller_task(const std::string& address, const size_t expectedWorkerCount,
+                               const load_balancing_strategy loadBalancingStrategy, const std::string& localCacheDir,
+                               bool disableLogging, bool runSO, bool runMO)
+{
     udp_registry::get().set_local_cache_dir(localCacheDir);
 
-    if (runSO) {
+    if (runSO)
+    {
         // Single-objective benchmark
         distributed_solver ds{address, get_so_algorithm_count(), loadBalancingStrategy};
         benchmark_stats bench{};
         run_so_benchmark(ds, bench);
     }
 
-    if (runMO) {
+    if (runMO)
+    {
         // Multi-objective benchmark
         distributed_solver ds{address, get_mo_algorithm_count(), loadBalancingStrategy};
         benchmark_stats bench{};
@@ -40,9 +43,10 @@ void benchmark_controller_task(const std::string &address, const size_t expected
     }
 }
 
-void default_controller_task(const std::string &address, const size_t expectedWorkerCount,
-                             const load_balancing_strategy loadBalancingStrategy, const std::string &localCacheDir,
-                             bool disableLogging) {
+void default_controller_task(const std::string& address, const size_t expectedWorkerCount,
+                             const load_balancing_strategy loadBalancingStrategy, const std::string& localCacheDir,
+                             bool disableLogging)
+{
     udp_registry::get().set_local_cache_dir(localCacheDir);
 
     unsigned param = 2;
@@ -52,7 +56,8 @@ void default_controller_task(const std::string &address, const size_t expectedWo
     algo.set_verbosity(0);
 
     distributed_solver ds{address, expectedWorkerCount, loadBalancingStrategy};
-    if (!disableLogging) {
+    if (!disableLogging)
+    {
         ds.enable_logging();
     }
 
@@ -71,40 +76,52 @@ void default_controller_task(const std::string &address, const size_t expectedWo
 //# CONTROLLER / WORKER RUN
 //####################################################
 
-void run_controller(const std::string &address, const size_t expectedWorkerCount,
-                    const load_balancing_strategy loadBalancingStrategy, const std::string &localCacheDir,
-                    const std::function<void(std::string, size_t, load_balancing_strategy, std::string, bool)> &runFunc,
-                    bool disableLogging) {
+void run_controller(const std::string& address, const size_t expectedWorkerCount,
+                    const load_balancing_strategy loadBalancingStrategy, const std::string& localCacheDir,
+                    const std::function<void(std::string, size_t, load_balancing_strategy, std::string, bool)>& runFunc,
+                    bool disableLogging)
+{
     std::string errMsg = "Aborting distributed solver, an exception occurred: ";
-    try {
+    try
+    {
         runFunc(address, expectedWorkerCount, loadBalancingStrategy, localCacheDir, disableLogging);
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception& e)
+    {
         errMsg += e.what();
         spdlog::critical("{}", errMsg);
         throw std::runtime_error(errMsg);
-    } catch (const std::string &e) {
+    }
+    catch (const std::string& e)
+    {
         errMsg += e;
         spdlog::critical("{}", errMsg);
         throw std::runtime_error(errMsg);
-    } catch (const char *e) {
+    }
+    catch (const char* e)
+    {
         errMsg += e;
         spdlog::critical("{}", errMsg);
         throw std::runtime_error(errMsg);
-    } catch (...) {
+    }
+    catch (...)
+    {
         errMsg += "unknown exception type";
         spdlog::critical("{}", errMsg);
         throw std::runtime_error(errMsg);
     }
 }
 
-void run_worker(const std::string &address,
+void run_worker(const std::string& address,
                 worker_mode mode,
                 size_t minIslandPopSize,
-                const std::string &localCacheDir,
-                const std::filesystem::path &settingsFilePath,
-                bool disableLogging) {
+                const std::string& localCacheDir,
+                const std::filesystem::path& settingsFilePath,
+                bool disableLogging)
+{
     std::string errMsg = "Aborting distributed worker, an exception occurred: ";
-    try {
+    try
+    {
         distributed_worker worker{
             address,
             mode,
@@ -115,28 +132,37 @@ void run_worker(const std::string &address,
             settingsFilePath
         };
 
-        if (!disableLogging) {
+        if (!disableLogging)
+        {
             worker.enable_logging();
         }
 
         udp_registry::get().set_local_cache_dir(localCacheDir);
         udp_registry::get().register_udp_provider(
-            [&worker](const std::string &libName) { return worker.get_dll_from_controller(libName); });
+            [&worker](const std::string& libName) { return worker.get_dll_from_controller(libName); });
         for (;;)
             worker.client_loop();
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception& e)
+    {
         errMsg += e.what();
         spdlog::critical("{}", errMsg);
         throw std::runtime_error(errMsg);
-    } catch (const std::string &e) {
+    }
+    catch (const std::string& e)
+    {
         errMsg += e;
         spdlog::critical("{}", errMsg);
         throw std::runtime_error(errMsg);
-    } catch (const char *e) {
+    }
+    catch (const char* e)
+    {
         errMsg += e;
         spdlog::critical("{}", errMsg);
         throw std::runtime_error(errMsg);
-    } catch (...) {
+    }
+    catch (...)
+    {
         errMsg += "unknown exception type";
         spdlog::critical("{}", errMsg);
         throw std::runtime_error(errMsg);
@@ -147,36 +173,38 @@ void run_worker(const std::string &address,
 //# PARSING
 //####################################################
 
-void print_help(char **argv) {
+void print_help(char** argv)
+{
     const std::string fName = std::filesystem::path(argv[0]).filename().string();
 
     std::cout <<
-            "Usage:\n"
-            "  " << fName << " --controller [options]\n"
-            "  " << fName << " --worker     [options]\n"
-            "\n"
-            "Common options:\n"
-            "  --disable-logging\n"
-            "  --benchmark-so  Run single-objective benchmarks\n"
-            "  --benchmark-mo  Run multi-objective benchmarks\n"
-            "\n"
-            "Controller options:\n"
-            "  --address      <addr>  (default: tcp://0.0.0.0:5000)\n"
-            "  --workers      <n>     Expected worker count (default: 2)\n"
-            "  --strategy     <name>  (default: BY_PERFORMANCE)\n"
-            "  --cache-dir    <dir>   (default: controller_cache)\n"
-            "\n"
-            "Worker options:\n"
-            "  --address      <addr>  (default: tcp://localhost:5000)\n"
-            "  --mode         <name>  (default: ARCHIPELAGO_BASED)\n"
-            "  --min-pop-size <n>     (default: 80)\n"
-            "  --cache-dir    <dir>   (default: worker_cache)\n"
-            "  --worker-dir   <name>  Per-worker isolated subdirectory name (default: auto-generated UUID)\n"
-            "  --no-worker-isolation  Disable per-worker isolated subdirectory with cache and settings\n"
-            << std::endl;
+        "Usage:\n"
+        "  " << fName << " --controller [options]\n"
+        "  " << fName << " --worker     [options]\n"
+        "\n"
+        "Common options:\n"
+        "  --disable-logging\n"
+        "  --benchmark-so  Run single-objective benchmarks\n"
+        "  --benchmark-mo  Run multi-objective benchmarks\n"
+        "\n"
+        "Controller options:\n"
+        "  --address      <addr>  (default: tcp://0.0.0.0:5000)\n"
+        "  --workers      <n>     Expected worker count (default: 2)\n"
+        "  --strategy     <name>  (default: BY_PERFORMANCE)\n"
+        "  --cache-dir    <dir>   (default: controller_cache)\n"
+        "\n"
+        "Worker options:\n"
+        "  --address      <addr>  (default: tcp://localhost:5000)\n"
+        "  --mode         <name>  (default: ARCHIPELAGO_BASED)\n"
+        "  --min-pop-size <n>     (default: 80)\n"
+        "  --cache-dir    <dir>   (default: worker_cache)\n"
+        "  --worker-dir   <name>  Per-worker isolated subdirectory name (default: auto-generated UUID)\n"
+        "  --no-worker-isolation  Disable per-worker isolated subdirectory with cache and settings\n"
+        << std::endl;
 }
 
-struct main_args {
+struct main_args
+{
     bool isController = false;
 
     std::string address = ""; // Set by user
@@ -202,58 +230,93 @@ struct main_args {
     bool runMOBenchmark = false;
 };
 
-std::optional<main_args> parse_main_args(const int argc, char **argv) {
+std::optional<main_args> parse_main_args(const int argc, char** argv)
+{
     main_args mainArgs{};
     bool modeSet = false;
 
-    for (int i = 1; i < argc; ++i) {
+    for (int i = 1; i < argc; ++i)
+    {
         std::string a = argv[i];
-        auto nextArg = [&]() -> std::string {
+        auto nextArg = [&]() -> std::string
+        {
             if (++i >= argc)
                 throw std::runtime_error(a + " requires a value");
             return argv[i];
         };
 
-        if (a == "--help" || a == "-h") {
+        if (a == "--help" || a == "-h")
+        {
             // handled in main
-        } else if (a == "--controller") {
+        }
+        else if (a == "--controller")
+        {
             mainArgs.isController = true;
             modeSet = true;
-        } else if (a == "--benchmark-so") {
+        }
+        else if (a == "--benchmark-so")
+        {
             mainArgs.runSOBenchmark = true;
-        } else if (a == "--benchmark-mo") {
+        }
+        else if (a == "--benchmark-mo")
+        {
             mainArgs.runMOBenchmark = true;
-        } else if (a == "--benchmark") {
+        }
+        else if (a == "--benchmark")
+        {
             mainArgs.runBenchmark = true;
-        } else if (a == "--disable-logging") {
+        }
+        else if (a == "--disable-logging")
+        {
             mainArgs.disableLogging = true;
-        } else if (a == "--worker") {
+        }
+        else if (a == "--worker")
+        {
             mainArgs.isController = false;
             modeSet = true;
-        } else if (a == "--address") {
+        }
+        else if (a == "--address")
+        {
             mainArgs.address = nextArg();
-        } else if (a == "--workers") {
+        }
+        else if (a == "--workers")
+        {
             mainArgs.workers = std::stoul(nextArg());
-        } else if (a == "--strategy") {
+        }
+        else if (a == "--strategy")
+        {
             mainArgs.strategy = nextArg();
-        } else if (a == "--mode") {
+        }
+        else if (a == "--mode")
+        {
             mainArgs.workerMode = nextArg();
-        } else if (a == "--min-pop-size") {
+        }
+        else if (a == "--min-pop-size")
+        {
             mainArgs.minPopSize = std::stoul(nextArg());
-        } else if (a == "--cache-dir") {
+        }
+        else if (a == "--cache-dir")
+        {
             mainArgs.cacheDir = nextArg();
-        } else if (a == "--worker-dir") {
+        }
+        else if (a == "--worker-dir")
+        {
             mainArgs.workerDir = nextArg();
-        } else if (a == "--no-worker-isolation") {
+        }
+        else if (a == "--no-worker-isolation")
+        {
             mainArgs.noWorkerDirectory = true;
-        } else {
+        }
+        else
+        {
             std::cerr << "Unknown argument: " << a << "\n";
             modeSet = false;
             break;
         }
     }
 
-    if (!modeSet) {
+    if (!modeSet)
+    {
         return std::nullopt;
     }
     return mainArgs;
@@ -262,31 +325,40 @@ std::optional<main_args> parse_main_args(const int argc, char **argv) {
 //####################################################
 //# MAIN
 //####################################################
-int main(int argc, char *argv[]) {
+int main(int argc, char* argv[])
+{
     // Parse cmd line args
-    const auto &mainArgsOpt = parse_main_args(argc, argv);
-    if (!mainArgsOpt.has_value()) {
+    const auto& mainArgsOpt = parse_main_args(argc, argv);
+    if (!mainArgsOpt.has_value())
+    {
         print_help(argv);
         return 2;
     }
-    const auto &ma = mainArgsOpt.value();
+    const auto& ma = mainArgsOpt.value();
 
-    if (ma.disableLogging) {
+    if (ma.disableLogging)
+    {
         use_null_logger();
     }
 
     // Run controller / worker
-    try {
-        if (ma.isController) {
+    try
+    {
+        if (ma.isController)
+        {
             const load_balancing_strategy lbs = (ma.strategy == "ALL_ISLANDS_EQUAL")
                                                     ? load_balancing_strategy::ALL_ISLANDS_EQUAL
                                                     : load_balancing_strategy::BY_PERFORMANCE;
 
-            auto controllerTaskWrapper = [&](const std::string &addr, size_t count, load_balancing_strategy strat,
-                                             const std::string &cache, bool log) {
-                if (ma.runSOBenchmark || ma.runMOBenchmark) {
+            auto controllerTaskWrapper = [&](const std::string& addr, size_t count, load_balancing_strategy strat,
+                                             const std::string& cache, bool log)
+            {
+                if (ma.runSOBenchmark || ma.runMOBenchmark)
+                {
                     benchmark_controller_task(addr, count, strat, cache, log, ma.runSOBenchmark, ma.runMOBenchmark);
-                } else {
+                }
+                else
+                {
                     default_controller_task(addr, count, strat, cache, log);
                 }
             };
@@ -299,7 +371,9 @@ int main(int argc, char *argv[]) {
                 controllerTaskWrapper,
                 ma.disableLogging
             );
-        } else {
+        }
+        else
+        {
             const worker_mode wm = (ma.workerMode == "ARCHIPELAGO_BASED")
                                        ? worker_mode::ARCHIPELAGO_BASED
                                        : worker_mode::SINGLE_THREADED;
@@ -308,13 +382,18 @@ int main(int argc, char *argv[]) {
             std::filesystem::path workerCacheDir;
             std::filesystem::path settingsFile;
 
-            if (ma.noWorkerDirectory) {
+            if (ma.noWorkerDirectory)
+            {
                 // Do NOT create a new dir for the worker
                 workerCacheDir = baseCacheDir;
                 settingsFile = baseCacheDir / "worker_settings.xml";
-            } else {
+            }
+            else
+            {
                 // Isolated worker directory
-                const std::string workerId = ma.workerDir.empty() ? ("worker_" + uuid::v4::UUID::New().String()) : ma.workerDir;
+                const std::string workerId = ma.workerDir.empty()
+                                                 ? ("worker_" + uuid::v4::UUID::New().String())
+                                                 : ma.workerDir;
                 const std::filesystem::path workerRoot = baseCacheDir / workerId;
                 workerCacheDir = workerRoot / "cache";
                 settingsFile = workerRoot / "worker_settings.xml";
@@ -330,7 +409,9 @@ int main(int argc, char *argv[]) {
                 ma.disableLogging
             );
         }
-    } catch (const std::exception &e) {
+    }
+    catch (const std::exception& e)
+    {
         return 2;
     }
 
